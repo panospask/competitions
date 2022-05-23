@@ -15,25 +15,19 @@ int main(void)
         scanf("%d", &n);
 
         int cur_arr[n];
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++) {
             scanf("%d", &cur_arr[i]);
+            counts[i]++;
+        }
         
-        int cur_b = ceil((float)n / 2);
-        int rev_b = ceil((float)n / 2);
-
-        for (int i = 0 ; i < n; i++) {
-            counts[cur_arr[i]] = counts[cur_arr[i]] + 1;
-            if (counts[cur_arr[i]] > 2) {
-                if (counts[cur_arr[i]] % 2 == 1)
-                    rev_b--;
-                else 
-                    cur_b--;
-            }
+        int singles = 0, dobles = 0;
+        for (auto j : counts) {
+            singles += j.second == 1;
+            dobles += j.second > 1;
         }
 
-        if (n == 1)
-            printf("1\n");
-        else 
-            printf("%d\n", min(cur_b, rev_b));
+        printf("%d\n", dobles + (singles) / 2);
     }
+
+    return 0;
 }

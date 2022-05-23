@@ -37,12 +37,16 @@ int main(void)
             scanf("%c", &s[i]);
 
         int count = 0;
-        for (int i = 0; i < n; i++) {
-            char temp = s[i];
-            s[i] = '\0';
-            count += check_pal(s, n);
-            s[i] = temp;
+        int must_be = s[(int) ceil((float)n / 2 - 1)];
+        for (int i = ceil((float)n / 2 - 1); i >= 0; i--) {
+            if (s[i] == must_be)
+                count += 2;
+            else 
+                break;
         }
+
+        if (n % 2 == 1 && count > 0)
+            count--;
 
         printf("%d\n", count);
     }
