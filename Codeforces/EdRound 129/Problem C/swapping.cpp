@@ -2,12 +2,15 @@
 
 using namespace std;
 
-unordered_map<int,int> start_a, ending_a, start_b, ending_b, is_in;
+typedef pair<int,int> ii;
+#define mp make_pair
+#define pb push_back
+
+unordered_map<int,int> start_a, ending_a, start_b, ending_b;
 int a[100], b[100];
-int cur_spot[100];
 int good_a[100], good_b[100];
 bool fixing[100];
-pair<int,int> swaps[150];
+vector<pair<int,int>> swaps;
 
 bool overlap_ranges(int x1, int x2, int y1, int y2)
 {
@@ -17,9 +20,47 @@ bool overlap_ranges(int x1, int x2, int y1, int y2)
     return false;
 }
 
-void selection_sort(void)
+ii find_overlap(int x1, int x2, int y1, int y2)
 {
-    ;
+    return mp(max(x1, x2), min(y1, y2));
+}
+
+void swap_sort(int n)
+{
+    int need_fixing = n;
+    for (int x = 0; x < n && need_fixing; x++) {
+        for (int i = 0; i < n && need_fixing; i++) {
+            if (!fixing[i]) {
+                ii my_range = find_overlap(start_a[a[i]], start_b[b[i]], ending_a[a[i]], ending_b[b[i]]);
+                if (i < my_range.first || i > my_range.second) {
+                    int j = my_range.first;
+                    bool done = false;
+                    while(!done) {
+                        if (!fixing[j]) {
+                            swap(a[i], a[j]);
+                            swap(b[i], b[i]);
+                            swaps.pb(mp(i, j));
+
+                            fixing[j] = true;
+                            need_fixing--;
+                            done = true;
+                        }
+                        else 
+                            j++;
+                    }
+                }
+                else {
+                    fixing[i] = true;
+                    need_fixing--;
+                }
+            }
+        }
+    }
+
+    printf("%d\n", (int)swaps.size());
+    for (auto x : swaps) {
+        printf("%d %d\n", x.first + 1, x.second + 1);
+    }
 }
 
 int main(void)
@@ -28,22 +69,23 @@ int main(void)
     scanf("%d", &t);
 
     for (int x = 0; x < t; x++) {
-        is_in.clear();
         start_a.clear();
         ending_a.clear();
         start_b.clear();
         ending_b.clear();
+        swaps.clear();
 
         int n;
         scanf("%d", &n);
         memset(fixing, false, n);
         for (int i = 0; i < n; i++) {
             scanf("%d", &a[i]);
-            cur_spot[i] = i;
-            is_in[i] = i;
+            good_a[i] = a[i];
         }
-        for (int i = 0; i < n; i++) 
+        for (int i = 0; i < n; i++) { 
             scanf("%d", &b[i]);
+            good_b[i] = b[i];
+        }
 
         sort(good_a, good_a + n);
         sort(good_b, good_b + n);
@@ -67,53 +109,16 @@ int main(void)
         }
         ending_b[prev_num] = n - 1;
 
-        bool is_good = true;
-        int swap_num = 0;
-        for (int i = 0; i < n && is_good; i++) {
-            if (!overlap_ranges(start_a[a[cur_spot[i]]], ending_a[a[cur_spot[i]]], start_b[b[cur_spot[i]]], ending_b[b[cur_spot[i]]])) 
-                is_good = false;
-            else {
-                for (int j = max(start_a[a[cur_spot[i]]], start_b[b[cur_spot[i]]]); j <= min(ending_a[a[cur_spot[i]]], ending_b[b[cur_spot[i]]]); j++) {
-                    if (!fixing[j]) {
-                        fixing[j] = true;
-                        if (cur_spot[i] != j) {
-                        swaps[swap_num].first = cur_spot[i];
-                        swaps[swap_num].second = j;
-                        swap(a[cur_spot[i]], a[j]);
-                        swap(b[cur_spot[i]], b[j]);
-                        int temp = cur_spot[is_in[j]];
-                        cur_spot[is_in[j]] = cur_spot[i];
-                        cur_spot[i] = j;
-                        is_in[i] = is_in[j];
-                        is_in[j] = i; // Not totally correct
-
-                        }
-                        else 
-                            swap_num--;
-                        
-                        break;
-                    }
-                }
-                swap_num++;
-            }
+        //check for equal ranges
+        bool isgood = true;
+        for (int i = 0; i < n && isgood; i++) {
+            if (!overlap_ranges(start_a[a[i]], ending_a[a[i]], start_b[b[i]], ending_b[b[i]]))
+                isgood = false;
         }
 
-        if (is_good) {
-            int new_swap = swap_num;
-            for (int i = 0; i < swap_num; i++) {
-                if (swaps[i].first == swaps[i].second) {
-                    new_swap--;
-                    swaps[i].first = -1;
-                }
-            }   
-
-            printf("%d\n", new_swap);
-            for (int i = 0 ; i < swap_num; i++) {
-                if (swaps[i].first != -1)
-                    printf("%d %d\n", swaps[i].first, swaps[i].second);
-            }
-        }
-        else 
+        if (!isgood)
             printf("-1\n");
+        else 
+            swap_sort(n);
     }
 }
