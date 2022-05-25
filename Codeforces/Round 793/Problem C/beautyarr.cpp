@@ -17,7 +17,7 @@ int main(void)
         int cur_arr[n];
         for (int i = 0; i < n; i++) {
             scanf("%d", &cur_arr[i]);
-            counts[i]++;
+            counts[cur_arr[i]]++;
         }
         
         int singles = 0, dobles = 0;
@@ -26,7 +26,7 @@ int main(void)
             dobles += j.second > 1;
         }
 
-        printf("%d\n", dobles + (singles) / 2);
+        printf("%d\n", dobles + (singles + 1) / 2);
     }
 
     return 0;

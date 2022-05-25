@@ -2,62 +2,41 @@
 
 using namespace std;
 
+#define pb push_back
+
+unordered_map<long long int, int> dist;
+
 int main(void)
 {
-    unsigned long long int x;
     int n;
-    unsigned long long int cur_power;
+    long long int x;
 
-    scanf("%d%llud", &n, &x);
+    scanf("%d %lld", &n, &x);
 
-    int length = 0;
-    for (auto i = x; i > 0; i /= 10)
-        length++;
-    
-    if (length > x) {
-        printf("-1\n");
-        return 0;
-    }
-    else if (x == 1 && x == 0) {
-        if (n > 1)
-            printf("-1\n");
-        else 
-            printf("0\n");
-        
-        return 0;
-    }
+    queue<long long int> resulting;
+    dist[x] = 0;
+    resulting.push(x);
 
-    cur_power = pow(10, length);
+    while(!resulting.empty()) {
+        long long int cur = resulting.front();
+        resulting.pop();
+        int curdist = dist[cur];
 
-    int moves = 0;
-    while(1) {
-        int max_dig = -1;
-        int cur_dig;
-        for (auto i = x; i > 0; i /= 10) {
-            cur_dig = i % 10;
-            if (cur_dig > max_dig)
-                max_dig = cur_dig;
-        }
-
-        if (max_dig == 1) {
-            if (length == n)
-                printf("%d\n", moves);
-            else 
-                printf("-1\n");
-
+        string num = to_string(cur);
+        if (num.length() == n) {
+            printf("%d\n", curdist);
             return 0;
         }
 
-        if (x * max_dig > cur_power) {
-            length++;
-            cur_power *= 10;
-            if (length == n) {
-                printf("%d\n", moves + 1);
-                return 0;
+        for (auto z : num) {
+            long long int new_num = cur * (int)(z - '0');
+            if (!dist[new_num]) {
+                dist[new_num] = curdist + 1;
+                resulting.push(new_num);
             }
         }
-
-        x *= max_dig;
-        moves++;
     }
+
+    printf("-1\n");
+    return 0;
 }
