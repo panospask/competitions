@@ -32,5 +32,6 @@ int main(void)
         printf("%d\n", common);
     }
 
+
     return 0;
 }
