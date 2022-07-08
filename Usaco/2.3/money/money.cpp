@@ -8,54 +8,25 @@ TASK: money
 
 using namespace std;
 
-long long int diff_ways[10005];
-int coins[25];
-int n, v;
-bool cur_used[10005];
-
-
-void add_coin(int i)
-{
-    int coinval = coins[i];
-
-    for (int i = coinval; i <= n; i++)
-        diff_ways[i] += diff_ways[i - coinval];
-}
-
-void make_num(int i)
-{
-    if (i == 0) {
-        diff_ways[i] = 1;
-        return;
-    }
-
-    int curcoin = 0;
-    while (coins[curcoin] <= i && curcoin < v) {
-        diff_ways[i] += diff_ways[i - coins[curcoin]];
-        curcoin++;
-    }
-}
+long long int v, n;
+long long int coins[25];
+long long int dp[10005];
 
 int main(void)
 {
     freopen("money.in", "r", stdin);
     freopen("money.out", "w", stdout);
 
-    scanf("%d %d", &v, &n);
+    scanf("%lld %lld", &v, &n);
     for (int i = 0; i < v; i++)
-        scanf("%d", &coins[i]);
+        scanf("%lld", &coins[i]);
 
-    sort(coins, coins + v);
+    dp[0] = 1;
+    for (int i = 0; i < v; i++)
+        for (int j = 0; j < n; j++)
+            if (coins[i] + j <= n)
+                dp[coins[i] + j] += dp[j];
 
-    for (int i = 0; i <= n; i++)
-        diff_ways[i] = 0;
-
-    diff_ways[0] = 1;
-
-
-    for (int i = 0; i <= n; i++)
-        make_num(i);
-    
-    printf("%lld\n", diff_ways[n]);
+    printf("%lld\n", dp[n]);
     return 0;
 }
