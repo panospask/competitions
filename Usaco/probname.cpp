@@ -1,6 +1,6 @@
 /*
 ID: panos.p1
-LANG: C++
+LANG: C++11
 TASK: probname
 */
 
