@@ -1,9 +1,11 @@
 #include "hiddenlib.h"
 #include <bits/stdc++.h>
+#define R  100
+#define N 5
 
 static int count = 0;
 
-int ishidden(int x)
+bool ishidden(int x)
 {
     count++;
     if (x == N) {

@@ -5,5 +5,6 @@
 # Εκτός από τα παρακάτω
 !*.c
 !*.cpp
+!*.h
 !.gitignore
 !README.md
