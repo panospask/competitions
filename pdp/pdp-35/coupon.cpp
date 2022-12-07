@@ -1,4 +1,4 @@
-/* USER: TO BE FILLED
+/* USER: paskalis35pdp
 LANG: C++
 TASK: coupon */
 
