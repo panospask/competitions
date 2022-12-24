@@ -8,6 +8,7 @@ vector<int> gave_ans[MAXN][2][2];
 int testcases[MAXM];
 int n, m;
 bool used[MAXN][2];
+int left_tcases;
 
 bool check_empty(vector<int>& v)
 {
@@ -45,13 +46,18 @@ int check_special(int bit, bool bitval)
 
 void modify_testcases(vector<int>& to_cancel, int mod_by)
 {
-    for (auto t : to_cancel)
+    for (auto t : to_cancel) {
         testcases[t] += 1 * mod_by;
+        if (testcases[t] == 1 && mod_by == 1)
+            left_tcases--;
+        else if (testcases[t] == 0)
+            left_tcases++;
+    }
 }
 
 int find_nth_case(int i)
 {
-    if (i == n)
+    if (i == n || left_tcases == 0)
         return true;
 
     bool found_ans = false;
@@ -63,8 +69,7 @@ int find_nth_case(int i)
                 modify_testcases(gave_ans[j][false][v], 1);
                 used[j][false] = true;
                 found_ans = find_nth_case(i + 1);
-                used[j][false] = false;
-                modify_testcases(gave_ans[j][false][v], -1);
+                break;
             }
         }
         if (!used[j][true] && !found_ans) {
@@ -73,8 +78,7 @@ int find_nth_case(int i)
                 modify_testcases(gave_ans[j][true][v], 1);
                 used[j][true] = true;
                 found_ans = find_nth_case(i + 1);
-                used[j][true] = false;
-                modify_testcases(gave_ans[j][true][v], -1);
+                break;
             }
         }
     }
@@ -84,12 +88,22 @@ int find_nth_case(int i)
 
 int main(void)
 {
+    // freopen("reveng.in", "r", stdin);
+
     int t;
     scanf("%d", &t);
     for (int x = 0; x < t; x++) {
         scanf("%d %d", &n, &m);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < 2; j++) {
+                gave_ans[i][j][0].clear();
+                gave_ans[i][j][1].clear();
+
+            }
+        }
         int curval[MAXN];
         int output;
+        left_tcases = m;
         for (int j = 0; j < m; j++) {
             for (int i = 0; i < n; i++) 
                 scanf("%1d", &curval[i]);
@@ -105,6 +119,9 @@ int main(void)
             printf("OK\n");
         else 
             printf("LIE\n");
+
+        memset(used, false, sizeof(used));
+        memset(testcases, false, sizeof(testcases));
     }
 
     return 0;
