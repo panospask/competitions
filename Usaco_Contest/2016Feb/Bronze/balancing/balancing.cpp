@@ -54,17 +54,26 @@ void test_cow(int i)
     test_square(sq_to_test + mp(-1, -1));
 }
 
+set<int> xcoords;
+set<int> ycoords;
+
 int main(void)
 {
     freopen("balancing.in", "r", stdin);
     freopen("balancing.out", "w", stdout);
 
     scanf("%d %d", &n, &b);
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
         scanf("%d %d", &cowcords[i].first, &cowcords[i].second);
+        xcoords.insert(cowcords[i].first - 1);
+        xcoords.insert(cowcords[i].first + 1);
+        ycoords.insert(cowcords[i].second - 1);
+        ycoords.insert(cowcords[i].second + 1);
+    }
     
-    for (int i = 0; i < n; i++)
-        test_cow(i);
+    for (auto x : xcoords)
+        for (auto y : ycoords)
+            test_square(mp(x, y));
 
     printf("%d\n", minans);
     return 0;
