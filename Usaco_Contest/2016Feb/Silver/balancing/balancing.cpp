@@ -13,43 +13,41 @@ int minans = INT_MAX;
 set<int> xcoords;
 set<int> ycoords;
 
-ii operator + (ii a, ii b)
+int find_opt_line(int y)
 {
-    return mp(a.first + b.first, a.second + b.second);
-}
-
-void test_square(ii square)
-{
-    int tr = 0, tl = 0, br = 0, bl = 0;
-
+    int opt = INT_MAX;
+    int tr = 0;
+    int tl = 0;
+    int br = 0;
+    int bl = 0;
     for (int i = 0; i < n; i++) {
-        if (cowcords[i].first > square.first) {
-            if (cowcords[i].second > square.second)
-                tr++;
-            else 
-                br++;
-        }
-        else {
-            if (cowcords[i].second > square.second)
-                tl++;
-            else   
-                bl++;
-        }
+        if (cowcords[i].first > y)
+            tr++;
+        else 
+            br++;
     }
 
-    int sqmax = max(max(tr, tl), max(br, bl));
+    int prevy = -1;
+    int curcow = 0;
+    for (auto x : xcoords) {
+        if (curcow == n)
+            break;
+        while (cowcords[curcow].second < x && curcow < n) {
+            if (cowcords[curcow].first < y) {
+                br--;
+                bl++;
+            }
+            else {
+                tr--;
+                tl++;
+            }
+            curcow++;
+        }
 
-    if (sqmax < minans)
-        minans = sqmax;
-}
+        opt = min(opt, max(max(tr, tl), max(br, bl)));
+    }
 
-void test_cow(int i)
-{
-    ii sq_to_test = cowcords[i];
-    test_square(sq_to_test + mp(1, 1));
-    test_square(sq_to_test + mp(1, -1));
-    test_square(sq_to_test + mp(-1, 1));
-    test_square(sq_to_test + mp(-1, -1));
+    return opt;
 }
 
 int main(void)
@@ -60,12 +58,16 @@ int main(void)
     scanf("%d", &n);
     for (int i = 0; i < n; i++) {
         scanf("%d %d", &cowcords[i].first, &cowcords[i].second);
-        xcoords.insert(cowcords[i].first);
-        ycoords.insert(cowcords[i].second);
+        xcoords.insert(cowcords[i].first + 1);
+        xcoords.insert(cowcords[i].first - 1);
+        ycoords.insert(cowcords[i].second + 1);
+        ycoords.insert(cowcords[i].second - 1);
     }
 
-    sort(xcoords.begin(), xcoords.end());
-    sort(ycoords.begin(), ycoords.end());
+    sort (cowcords, cowcords + n);
+
+    for (auto y : ycoords)
+        minans = min(minans, find_opt_line(y));
 
     printf("%d\n", minans);
     return 0;
