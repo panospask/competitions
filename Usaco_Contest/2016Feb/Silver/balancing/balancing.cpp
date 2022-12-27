@@ -21,7 +21,7 @@ int find_opt_line(int y)
     int br = 0;
     int bl = 0;
     for (int i = 0; i < n; i++) {
-        if (cowcords[i].first > y)
+        if (cowcords[i].second > y)
             tr++;
         else 
             br++;
@@ -32,8 +32,8 @@ int find_opt_line(int y)
     for (auto x : xcoords) {
         if (curcow == n)
             break;
-        while (cowcords[curcow].second < x && curcow < n) {
-            if (cowcords[curcow].first < y) {
+        while (cowcords[curcow].first < x && curcow < n) {
+            if (cowcords[curcow].second < y) {
                 br--;
                 bl++;
             }
