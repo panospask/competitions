@@ -9,24 +9,41 @@ struct rect {
     int x1, x2, y1, y2;
 
     void read(void) {
-        cin >> x1 >> x2 >> y1 >> y2;
+        cin >> this->x1 >> this->y1 >> this->x2 >> this->y2;
     }
-    int area(void) {
-        return (x2 - x1) * (y2 - y1);
+    long long int area(void) {
+        return (long long int)(x2 - x1) * (y2 - y1);
     }
 };
 typedef struct rect Rect;
 
 Rect whitesheet, black1, black2;
 
-int intersect_range(ii a, ii b)
+bool intersecting(Rect a, Rect b) 
 {
-    return max(0, min(a.second, b.second) - max(a.first, b.first));
+    if (a.x1 >= b.x2 || b.x1 >= a.x2 || a.y1 >= b.y2 || b.y1 >= a.y2) 
+        return false;
+
+    return true;
 }
 
-int intersect_area(Rect a, Rect b)
+bool full_cover(Rect a, Rect b)
 {
-    return intersect_range(mp(a.x1, a.x2), mp(b.x1, b.x2)) * intersect_range(mp(a.y1, a.y2), mp(b.y1, b.y2));
+    if (a.x1 <= b.x1 && a.x2 >= b.x2 && a.y1 <= b.y1 && a.y2 >= b.y2)
+        return true;
+    
+    return false;
+}
+
+Rect intersection_of(Rect a, Rect b)
+{
+    Rect c;
+    c.x1 = max(a.x1, b.x1);
+    c.y1 = max(a.y1, b.y1);
+    c.x2 = min(a.x2, b.x2);
+    c.y2 = min(a.y2, b.y2);
+
+    return c;
 }
 
 int main(void)
@@ -35,9 +52,23 @@ int main(void)
     black1.read();
     black2.read();
 
-    int area_rem = whitesheet.area() - intersect_area(whitesheet, black1) - intersect_area(whitesheet, black2) + intersect_area(black1, black2);
+    bool intersect1 = intersecting(whitesheet, black1);
+    bool intersect2 = intersecting(whitesheet, black2);
 
-    if (area_rem > 0)
+    long long int area_rem = whitesheet.area();
+    if (intersect1) {
+        area_rem -= intersection_of(whitesheet, black1).area();
+    }
+    if (intersect2) {
+        area_rem -= intersection_of(whitesheet, black2).area();
+    }
+    if (intersect1 && intersect2) {
+        if (intersecting(intersection_of(whitesheet, black1), intersection_of(whitesheet, black2)))
+            area_rem += intersection_of(intersection_of(whitesheet, black1), intersection_of(whitesheet, black2)).area();
+    }
+
+
+    if (area_rem > 0 && !full_cover(black1, whitesheet) && !full_cover(black2, whitesheet))
         printf("YES\n");
     else    
         printf("NO\n");
