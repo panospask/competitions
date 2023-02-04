@@ -26,7 +26,16 @@ bool xcomp(Point p, Point q)
 }
 
 vector<Point> pointcoords;
+vector<pair<int, int>> basecoords;
 int n;
+
+bool comppair(pair<int, int> a, pair<int, int> b)
+{
+    if (a.first == b.first)
+        return a.second > b.second;
+
+    return a.first < b.first;
+}
 
 int main(void)
 {
@@ -35,36 +44,34 @@ int main(void)
 
     scanf("%d", &n);
     Point p;
+    int lbasecoord, rbasecoord;
     for (int i = 0; i < n; i++) {
         scanf("%d %d", &p.x, &p.y);
         pointcoords.pb(p);
+
+        lbasecoord = p.x - p.y;
+        rbasecoord = lbasecoord + 2 * p.y;
+
+        basecoords.pb(mp(lbasecoord, rbasecoord));
     }
-    sort(pointcoords.rbegin(), pointcoords.rend());
 
-    int seen_points = 0;
+    // Sort by leftmost base point
+    sort(basecoords.begin(), basecoords.end(), comppair);
 
-    // Calculate the highest point
-    int curpoint = 0;
-    int xcoord = pointcoords[curpoint].x, ycoord = pointcoords[curpoint].y;
-    seen_points++;
-    int a = pointcoords[curpoint].x - pointcoords[curpoint].y;
-    int b = pointcoords[curpoint].y + pointcoords[curpoint].x;
+    int rightmost_coord = INT_MIN;
+    int mt_seen = 0;
 
-    int cur_a, cur_b;
-    for (int i = 0; i < n; i++) {
-        cur_a = pointcoords[i].x - pointcoords[i].y;
-        cur_b = pointcoords[i].y + pointcoords[i].x;
-
-        if (cur_a < a) {
-            seen_points++;
-            a = cur_a;
+    for (auto coords : basecoords) {
+        if (rightmost_coord == INT_MIN) {
+            rightmost_coord = coords.second;
+            mt_seen ++;
         }
-        else if (cur_b > b) {
-            seen_points++;
-            b = cur_b;
+        else if (coords.second > rightmost_coord) {
+            rightmost_coord = coords.second;
+            mt_seen++;
         }
     }
 
-    printf("%d\n", seen_points);
+    printf("%d\n", mt_seen);
     return 0;
 }
