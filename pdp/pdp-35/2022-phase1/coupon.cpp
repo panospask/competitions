@@ -38,19 +38,19 @@ void print_ans(int value)
     long int total_spent = 0;
     
     for (int i = 0; i < n; i++) {
-        total_spent += curval * famnum[i];
-        curval = (curval * A) / MOD_BY;
         if (curval < 10)
             curval = 0;
+        total_spent += curval * famnum[i];
+        curval = (curval * A) / MOD_BY;
     }
     printf("%ld\n", total_spent);
 
     curval = value;
     for (int i = 0; i < n; i++) {
-        printf("%d\n", curval);
-        curval = (curval * A) / MOD_BY;
         if (curval < 10)
             curval = 0;
+        printf("%d\n", curval);
+        curval = (curval * A) / MOD_BY;
     }
 
     return;
