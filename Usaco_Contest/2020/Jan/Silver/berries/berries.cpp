@@ -6,20 +6,14 @@
 
 using namespace std;
 
-multiset<int> berries_for_a_basket;
-int n, k;
-
-int find_element_at(int a)
+bool greatercomp(int a, int b)
 {
-    auto it = berries_for_a_basket.begin();
-    int i = 0;
-    while (i < a) {
-        it++;
-        i++;
-    }
-
-    return *it;
+    return a > b;
 }
+
+multiset<int, decltype(greatercomp)*> berries_for_a_basket(greatercomp);
+int n, k;
+int max_berries = 0;
 
 int main(void)
 {
@@ -31,37 +25,62 @@ int main(void)
         int curberries;
         scanf("%d", &curberries);
         berries_for_a_basket.insert(curberries);
+        max_berries = max(max_berries, curberries);
     }
 
-    while (berries_for_a_basket.size() > k)
-        berries_for_a_basket.erase(berries_for_a_basket.begin());
-    bool stop_method = false;  
-    while (!stop_method) {
-        int min_element = *(berries_for_a_basket.begin());
-        auto it_max_element = berries_for_a_basket.end();
-        int max_element = *--it_max_element;
+    int ans = 0;
+    for (int v = 1; v <= max_berries; v++) {
+        // Assume the k / 2 first baskets have v berries
+        int baskets_rem = k / 2;
+        multiset<int, decltype(greatercomp)*> cur_berries(greatercomp);
+        cur_berries = berries_for_a_basket;
+        bool isgood = true;
 
-        int mid = find_element_at(k / 2 - 1);
-        if (min_element + mid < max_element) {
-            berries_for_a_basket.erase(berries_for_a_basket.find(min_element));
-            berries_for_a_basket.erase(berries_for_a_basket.find(max_element));
+        while (baskets_rem > 0 && !cur_berries.empty()) {
+            auto it = cur_berries.begin();
+            int current = *it;
+            if (current < v) break;
+            cur_berries.erase(it);
 
-            berries_for_a_basket.insert(mid);
-            berries_for_a_basket.insert(max_element - mid);
+            int baskets_removable = min(current / v, baskets_rem);
+            baskets_rem -= baskets_removable;
+            cur_berries.insert(current - baskets_removable * v);
         }
-        else 
-            stop_method = true;
+
+        if (baskets_rem > 0) {
+            isgood = false;
+        }
+
+        // Fill the next as many baskets are possible with v berries
+        int local_ans = 0;
+        int baskets_to_fill = k / 2;
+        while (!cur_berries.empty() && baskets_to_fill > 0 && isgood) {
+            auto it = cur_berries.begin();
+            int current = *it;
+            if (current < v) break;
+            cur_berries.erase(it);
+
+            int to_rem = min(baskets_to_fill, current / v);
+            baskets_to_fill -= to_rem;
+            local_ans += to_rem * v;
+            if (to_rem * v != current)
+                cur_berries.insert(current - to_rem * v);
+        }
+
+        while (baskets_to_fill > 0 && isgood && !cur_berries.empty()) {
+            auto it = cur_berries.begin();
+            int current = *it;
+            cur_berries.erase(it);
+            local_ans += current;
+            baskets_to_fill--;
+        }
+
+        if (!isgood)
+            local_ans = -1;
+
+        ans = max(ans, local_ans);
     }
 
-    
-    int cur_berries = 0;
-    int i = 0;
-    for (auto basket : berries_for_a_basket) {
-        if (i == k / 2) break;
-        i++;
-        cur_berries += basket;
-    }
-
-    printf("%d\n", cur_berries);
+    printf("%d\n", ans);
     return 0;
 }
