@@ -20,7 +20,10 @@ typedef struct edge Edge;
 int tiles[MAXN + 5][MAXM + 5];
 int iswaypoint[MAXN + 5][MAXN + 5];
 bool visited[MAXN + 5][MAXN + 5];
-vector<Edge> adj_list[MAXN + 5][MAXN + 5];
+int dist[MAXN + 5][MAXN + 5][4];
+int u = 0, l = 1, d = 2, r = 3;
+int dir_ver[4] = {-1, 0, 1, 0};
+int dir_hor[4] = {0, -1, 0, 1};
 int n, m;
 int ttl_points;
 int maxheight, minheight = INT_MAX;
@@ -32,9 +35,9 @@ int dfs(int i, int j, int d)
 
     visited[i][j] = true;
     int waypoints = iswaypoint[i][j];
-    for (auto& neigh : adj_list[i][j])
-        if (neigh.abs <= d && !visited[neigh.i][neigh.j])
-            waypoints += dfs(neigh.i, neigh.j, d);
+    for (int x = 0; x < 4; x++)
+        if (dist[i][j][x] <= d)
+            waypoints += dfs(i + dir_ver[x], j + dir_hor[x], d);
 
     return waypoints;
 }
@@ -60,18 +63,25 @@ int main(void)
 
     for (int i = 0; i < m; i++)
         for (int j = 0; j < n; j++) {
-            if (i != 0) {
-                adj_list[i][j].pb(Edge(i - 1, j, abs(tiles[i][j] - tiles[i-1][j])));
-            }
-            if (i != m - 1) {
-                adj_list[i][j].pb(Edge(i + 1, j, abs(tiles[i][j] - tiles[i+1][j])));
-            }
-            if (j != 0) {
-                adj_list[i][j].pb(Edge(i, j - 1, abs(tiles[i][j] - tiles[i][j-1])));
-            }
-            if (j != n - 1) {
-                adj_list[i][j].pb(Edge(i, j + 1, abs(tiles[i][j] - tiles[i][j+1])));
-            }
+            if (i != 0) 
+                dist[i][j][u] = abs(tiles[i][j] - tiles[i-1][j]);
+            else 
+                dist[i][j][u] = INT_MAX;
+            
+            if (i != m - 1) 
+                dist[i][j][d] = abs(tiles[i][j] - tiles[i+1][j]);
+            else 
+                dist[i][j][d] = INT_MAX;
+            
+            if (j != 0) 
+                dist[i][j][l] = abs(tiles[i][j] - tiles[i][j-1]);
+            else 
+                dist[i][j][l] = INT_MAX;
+
+            if (j != n - 1) 
+                dist[i][j][r] = abs(tiles[i][j] - tiles[i][j+1]);
+            else 
+                dist[i][j][r] = INT_MAX;
         }
 
     for (int i = 0; i < m; i++)
