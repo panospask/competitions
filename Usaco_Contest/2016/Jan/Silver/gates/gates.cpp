@@ -14,7 +14,7 @@ int u = 0, l = 1, d = 2, r = 3;
 int dir_ver[4] = {1, 0, -1, 0};
 int dir_hor[4] = {0, -1, 0, 1};
 map<ii, bool> visited;
-map<ii, bool> is_reached[4];
+map<ii, bool> is_used[4];
 int upmost = 0, leftmost = 0, rightmost = 0, downmost = 0;
 
 int floodfill(ii start)
@@ -40,9 +40,10 @@ int floodfill(ii start)
 
         visited[mp(i, j)] = true;
         for (int x = 0; x < 4; x++)
-            if (can_go[x].count(mp(i,j)) && !is_reached[(x+2)%4].count(mp(i,j))) {
+            if (can_go[x].count(mp(i,j)) && !is_used[(x+2)%4].count(mp(i,j))) {
                 tiles.push(mp(i + dir_ver[x], j + dir_hor[x]));
-                is_reached[x][mp(i + dir_ver[x], j + dir_hor[x])] = true;
+                is_used[x][mp(i + dir_ver[x], j + dir_hor[x])] = true;
+                is_used[(x+2)%4][mp(i,j)] = true;
             }
 
     }
@@ -89,7 +90,7 @@ int main(void)
             cur_pos = mp(cur_pos.first, cur_pos.second + 1);
             can_go[l][cur_pos] = true;
 
-            rightmost = max(rightmost, cur_pos.first);
+            rightmost = max(rightmost, cur_pos.second);
         }
 
     }

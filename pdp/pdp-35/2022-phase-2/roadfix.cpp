@@ -78,14 +78,17 @@ int main(void)
             // Iterate through every offer to calculate the total cost for that offers end
 
             cur_offer = offers[i];
+            if (cur_offer.end <= cur_query.first) continue;
             prevcost = find_cost_to_reach(offers[i].start);
             if (prevcost == -1) continue;
 
             pair<int, long long int> cur_prog = make_pair(offers[i].end, offers[i].cost + prevcost);
             while (!min_cost_for.empty()) {
                 auto p = *min_cost_for.rbegin();
-                if (p.second > cur_prog.second)
+                if (p.second >= cur_prog.second) {
+                    // No need to keep p
                     min_cost_for.erase(p);
+                }
                 else
                     break;
             }
