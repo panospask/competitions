@@ -1,123 +1,123 @@
 #include <bits/stdc++.h>
 #define pb push_back
 #define mp make_pair
-#define MAXN 25
 
 using namespace std;
 
 typedef pair<int, int> ii;
 
-int visited[MAXN + 2][MAXN + 2];
-char board[3][3];
-map<ii, pair<char,ii>> move_make;
-bool can_go[MAXN + 2][MAXN + 2];
-map<string[3], bool> reached;
-ii bessiepos;
-int latest_piece = -1;
-int cur_step;
-vector<ii> movesquares;
-map<ii, int> square_to_num;
+bool been_in_state[25][25][20000];
+bool can_go[25][25];
+char maze[25][25];
+int n;
 
 int dir_ver[4] = {1, 0, -1, 0};
 int dir_hor[4] = {0, 1, 0, -1};
 
-set<vector<string>> answers;
+map<ii, pair<ii, int>> moves;
 
-int n;
+int threepow[10];
 
-bool check_string(string& s)
+set<int> answers;
+
+bool check_state(int b)
 {
-    if (s == "MOO" || s == "OOM")
-        return true;
-    return false;
-}
+    int grid[3][3]; // 0 for nothing, 1 for M, 2 for O
+    for (int i = 0; i < 3; i++)
+        for (int j =  0; j < 3; j++) {
+            grid[i][j] = b % 3;
+            b /= 3;
+        }
+            
 
-bool check_using(int i, int j)
-{
-    // Check horizontal
-    string cur;
-    for (int x = 0; x < 3; x++)
-        cur.push_back(board[i][x]);
-    
-    if (check_string)
-        return true;
-
-    // Check vertical
-    for (int x = 0; x < 3; x++)
-        cur.push_back(board[x][j]);
-    
-    if (check_string)
-        return true;
-
-    // Check diagonal
-    if (i == j) {
-        for (int x = 0; x < 3; x++)
-            cur.push_back(board[x][x]);
-        if (check_string)
-            return true;
+    bool isgood = false;
+    for (int i = 0; i < 3; i++) {
+        if ((grid[i][0] == 1 && grid[i][1] == 2 && grid[i][2] == 2)
+        || grid[i][0] == 2 && grid[i][1] == 2 && grid[i][2] == 1)
+            isgood = true;
     }
-    if (i == 3 - j - 1) {
-        for (int x = 0; x < 3; x++)
-            cur.push_back(board[x][2-x]);
-        if (check_string)
-            return true;
+    for (int j = 0; j < 3; j++) {
+        if ((grid[0][j] == 1 && grid[1][j] == 2 && grid[2][j] == 2)
+        || grid[0][j] == 2 && grid[1][j] == 2 && grid[2][j] == 1)
+            isgood = true;
     }
 
-    return false;
+    if (grid[0][0] == 1 && grid[1][1] == 2 && grid[2][2] == 2) isgood = true;
+    if (grid[0][0] == 2 && grid[1][1] == 2 && grid[2][2] == 1) isgood = true;
+    if (grid[0][2] == 1 && grid[1][1] == 2 && grid[2][0] == 2) isgood = true;
+    if (grid[0][2] == 2 && grid[1][1] == 2 && grid[2][0] == 1) isgood = true;
+
+    return isgood;
 }
 
-void make_floor(int i, int j)
+void dfs(int i, int j, int b)
 {
-    can_go[i][j] = true;
-}
-
-void make_move(int i, int j, string& m)
-{
-    make_floor(i,j);
-    move_make[mp(i,j)] = mp(m[0], mp(m[1]-'1',m[2]-'1'));
-}
-
-void make_wall(int i, int j)
-{
-    can_go[i][j] = false;
-}
-
-void dfs(int i, int j)
-{
-    if (visited[i][j] > 3)
+    if (!can_go[i][j] || been_in_state[i][j][b])
         return;
-    
-    visited[i][j]++;
 
-    
+    been_in_state[i][j][b] = true;
+    if (moves.count(mp(i,j))) {
+        int x, y;
+        tie(x, y) = moves[mp(i,j)].first;
+        int indx = threepow[(3*x + y)];
+
+        if ((b / indx) % 3 == 0) {
+            b += indx * moves[mp(i,j)].second;
+
+            if (been_in_state[i][j][b]) return;
+
+            been_in_state[i][j][b] = true;
+            if (check_state(b)) {
+                answers.insert(b);
+                return;
+            }
+        }
+    }
+
+    for (int x = 0; x < 4; x++)
+        dfs(i + dir_ver[x], j + dir_hor[x], b);
 }
 
 int main(void)
 {
-    freopen("mazetactoe.in", "r", stdin);
-    freopen("mazetactoe.out", "w", stdout);
+    // freopen("mazetactoe.in", "r", stdin);
+    // freopen("mazetactoe.out", "w", stdout);
 
-    ios::sync_with_stdio(false);
-    cin >> n;
+    scanf("%d", &n);
     string cur;
     cur.resize(3);
-    for (int i = 0; i < n; i++)
+    ii bessiepos;
+
+    threepow[0] = 1;
+    for (int i = 1; i <= 9; i++)
+        threepow[i] = threepow[i-1] * 3;
+
+    for (int i = 0; i < n; i++) {
+        getchar();
         for (int j = 0; j < n; j++) {
-            for (int x = 0; x < 3; x++)
-                cin >> cur[x];
-            
+            cur[0] = getchar();
+            cur[1] = getchar();
+            cur[2] = getchar();
+
             if (cur[0] == '#')
-                make_wall(i,j);
-            else if (cur[0] == '.')
-                make_floor(i,j);
-            else if (cur[0] == 'B') {
-                bessiepos = mp(i,j);
-                make_floor(i, j);
-            }
+                can_go[i][j] = false;
             else {
-                make_move(i, j, cur);
-                movesquares.pb(mp(i,j));
-                square_to_num[mp(i,j)] = movesquares.size() - 1;
+                can_go[i][j] = true;
+                if (cur[0] == 'B')
+                    bessiepos = mp(i,j);
+                else if (cur[0] == 'M' || cur[0] == 'O') {
+                    int id = (cur[0] == 'O') + 1;
+                    int x = cur[1] - '1';
+                    int y = cur[2] - '1';
+
+                    moves[mp(i,j)] = mp(mp(x,y), id);
+                }
             }
         }
+    }
+
+    dfs(bessiepos.first, bessiepos.second, 0);
+
+    printf("%d\n", (int)answers.size());
+    return 0;
 }
