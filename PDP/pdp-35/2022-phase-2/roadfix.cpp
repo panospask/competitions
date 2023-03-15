@@ -56,8 +56,8 @@ long long int find_cost_to_reach(int pos)
 
 int main(void)
 {
-    freopen("roadfix.in", "r", stdin);
-    freopen("roadfix.out", "w", stdout);
+    // freopen("roadfix.in", "r", stdin);
+    // freopen("roadfix.out", "w", stdout);
 
     scanf("%d %d", &n, &m);
     Offer cur;
