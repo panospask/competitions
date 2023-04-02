@@ -6,6 +6,7 @@
 
 using namespace std;
 
+// dp[i][j]: Optimal solution if the latest used cow is i and there are j cows in the team 
 long long int dp[MAXN + 2][MAXK + 2];
 int highest_cow[MAXN + 2][MAXK + 2];
 int team_size[MAXN + 2][MAXK + 2];
@@ -23,25 +24,33 @@ int main(void)
         scanf("%d", &skill[i]);
     
     for (int i = 0; i <= k; i++) {
-        dp[0][i] = 0;
         highest_cow[0][i] = 0;
-        team_size[0][i] = 0;
     }
 
-    for (int i = 1; i <= n; i++)
+    memset(dp, -1, sizeof(dp));
+    dp[0][k] = 0;
+    for (int i = 0; i < n; i++) {
         for (int j = 1; j <= k; j++) {
-            // Add the current cow on the team
-            int mcow = max(highest_cow[i-1][j], skill[i]);
-            int teamsz = team_size[i-1][j] + 1;
-            long long int val = teamsz * mcow;
+            if (dp[i][j] == -1)
+                continue;
 
-            dp[i][j] = val;
-            highest_cow[i][j] = mcow;
-            team_size[i][j] = teamsz;
+            // Add the next cow in the team
+            int newskill = skill[i+1];
+            if (j != k) {
+                highest_cow[i+1][j+1] = max(highest_cow[i][j], newskill);
+                dp[i+1][j+1] = dp[i][j] + (long long int)(j + 1) * highest_cow[i+1][j+1] - (long long int)j * highest_cow[i][j]; 
+            }
 
-            // Check if cutting out the team and forming new one is better
-            if (dp[i][j] < dp[i-1][j-1] + skill[i]);
-
-            // Finish later
+            // Create a new team
+            highest_cow[i+1][1] = newskill;
+            dp[i+1][1] = max(dp[i+1][1], dp[i][j] + newskill);
         }
+    }
+
+    long long int ans = 0;
+    for (int j = 1; j <= k; j++)
+        ans = max(ans, dp[n][j]);
+
+    printf("%lld\n", ans);
+    return 0;
 }
