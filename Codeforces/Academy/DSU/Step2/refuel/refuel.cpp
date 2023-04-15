@@ -1,0 +1,86 @@
+#include <bits/stdc++.h>
+#define MAXK 400000
+
+using namespace std;
+
+struct edge {
+    int a, b, w;
+    
+    void readedge(void) {
+        scanf("%d %d %d", &a, &b, &w);
+        a--; b--;
+    }
+};
+typedef struct edge Edge;
+
+bool operator < (Edge& a, Edge& b)
+{
+    return a.w < b.w;
+}
+
+struct dsu {
+
+    int size;
+    vector<int> rep;
+    vector<int> rank;
+
+    void init(int n) {
+        size = n;
+        rep.resize(n);
+        rank.assign(n, 0);
+
+        for (int i = 0; i < n; i++)
+            rep[i] = i;
+    }
+
+    int get(int a) {
+        if (rep[a] != a)
+            rep[a] = get(rep[a]);
+        
+        return rep[a];
+    }
+
+    bool unite(int a, int b) {
+        a = get(a);
+        b = get(b);
+
+        if (a == b)
+            return false;
+
+        if (rank[a] == rank[b])
+            rank[a]++;
+
+        if (rank[a] > rank[b])
+            rep[b] = a;
+        else 
+            rep[a] = b;
+
+        return true;
+    }
+};
+
+int n, k;
+Edge edges[MAXK + 2];
+struct dsu graph;
+
+int main(void)
+{
+    scanf("%d %d", &n, &k);
+    for (int i = 0; i < k; i++)
+        edges[i].readedge();
+
+    sort(edges, edges + k);
+
+    graph.init(n);
+    int components = n;
+    int i = 0;
+    while (i < k && components > 1) {
+        if (graph.unite(edges[i].a, edges[i].b))
+            components--;
+        i++;
+    }
+    i--;
+
+    printf("%d\n", edges[i].w);
+    return 0;
+}
