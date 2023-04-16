@@ -9,6 +9,9 @@ using namespace std;
 typedef pair<int, int> ii;
 
 int n, q;
+
+// NOTE: Vectors save time
+// NOTE: Memset in arrays is time wasting, we would rather do less updates by hand 
 // dp[l][r]: The number of 3sum tuples in the range (l, r)
 vector<vector<long long>> dp(MAXN, vector<long long>(MAXN, 0));
 int a[MAXN];
