@@ -1,71 +1,62 @@
 #include <bits/stdc++.h>
-#define MAXN 100000
 
 using namespace std;
 
-typedef pair<int, int> ii;
+typedef pair<int, int> pi;
 
-int n;
-ii candies[MAXN + 2];
-int lis[MAXN + 2];
-vector<ii> candies_caught[MAXN + 2];
+int main() {
+	int n;
+	cin >> n;
 
+	vector<pi> candies(n);
+	vector<int> lis(n + 1);
+	vector<vector<pi>> candies_caught(n + 1);
 
-// NOTE: It is important to sort segments of same left point by decreasing right point
-// so they count as nested
-bool compare_segments(ii a, ii b)
-{
-    if (a.first == b.first)
-        return a.second > b.second;
+	for (int i = 0; i < n; i++) {
+		int s, t;
+		cin >> s >> t;
+		candies[i] = make_pair(s - t, s + t);
+	}
 
-    return a.first < b.first;
-}
+	/*
+	 * Sort the segments by left endpoint
+	 * NOTE: It is important to sort segments of same left point by decreasing
+	 * right point so they count as nested
+	 */
+	sort(candies.begin(), candies.end(), [](const pi &a, const pi &b) -> bool {
+		return (a.first == b.first ? a.second > b.second : a.first < b.first);
+	});
 
-int main(void)
-{
-    scanf("%d", &n);
-    int s, t;
-    for (int i = 0; i < n; i++) {
-        scanf("%d %d", &s, &t);
-        candies[i] = make_pair(s - t, s + t);
-    }
+	for (int len = 0; len <= n; len++) { lis[len] = INT_MAX; }
+	lis[0] = 0;
+	for (int i = 0; i < n; i++) {
+		int r_point = candies[i].second;
 
-    // Sort the segments by left endpoint
-    sort(candies, candies + n, compare_segments);
+		int l = 0;  // Condition: lis[l] < r_point
+		int r = n;  // Condition: lis[r] >= r_point
+		while (r > l + 1) {
+			int mid = (l + r) / 2;
+			if (lis[mid] < r_point) {
+				l = mid;
+			} else {
+				r = mid;
+			}
+		}
+		lis[l + 1] = r_point;
+		// Candies with the same lis length can be caught by the same wagon
+		candies_caught[l + 1].push_back(candies[i]);
+	}
 
-    for (int len = 0; len <= n; len++)
-        lis[len] = INT_MAX;
-    lis[0] = 0;
-    for (int i = 0; i < n; i++) {
-        int r_point = candies[i].second;
-        
-        int l = 0; // Condition: lis[l] < r_point
-        int r = n; // Condition: lis[r] >= r_point
-        while (r > l + 1) {
-            int mid = (l + r) / 2;
-            if (lis[mid] < r_point)
-                l = mid;
-            else 
-                r = mid;
-        }
+	int ans = 0;
+	while (ans < n && lis[ans + 1] != INT_MAX) { ans++; }
 
-        lis[l+1] = r_point;
-        // Candies with the same lis length can be caught by the same wagon
-        candies_caught[l+1].push_back(candies[i]);
-    }
+	cout << ans << "\n";
+	for (int len = 1; len <= ans; len++) {
+		for (pi c : candies_caught[len]) {
+			int s = (long long)(c.first + c.second) / 2;
+			int t = (long long)(c.second - c.first) / 2;
 
-    int ans = 0;
-    while (ans < n && lis[ans + 1] != INT_MAX)
-        ans++;
-
-    printf("%d\n", ans);
-    for (int len = 1; len <= ans; len++) 
-        for (ii c : candies_caught[len]) {
-            int s = (long long)(c.first + c.second) / 2;
-            int t = (long long)(c.second - c.first) / 2;
-
-            printf("%d %d %d\n", s, t, len);
-        }
-    
-    return 0;
+			cout << s << " " << t << " " << len << "\n";
+		}
+	}
 }
