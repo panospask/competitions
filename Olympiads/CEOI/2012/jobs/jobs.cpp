@@ -4,6 +4,7 @@ using namespace std;
 
 int n ,d, m;
 vector<int> jobs;
+vector<vector<int>> job_ids;
 
 bool can_complete(int x)
 {
@@ -30,12 +31,14 @@ int main(void)
 {
     scanf("%d %d %d", &n, &d, &m);
     jobs.assign(n, 0);
+    job_ids.resize(n);
     for (int i = 0; i < m; i++) {
         int day;
         scanf("%d", &day);
         day--;
 
         jobs[day]++;
+        job_ids[day].push_back(i + 1);
     }
 
     int l = 0;
@@ -49,5 +52,23 @@ int main(void)
     }
 
     printf("%d\n", r);
+    int cur_day = 0;
+    for (int i = 0; i < n; i++) {
+        int rem = r;
+        while (cur_day <= i && rem !=  0) {
+            int proc = min(rem, (int)job_ids[cur_day].size());
+            for (int i = 0; i < proc; i++) {
+                printf("%d ", job_ids[cur_day].back());
+                job_ids[cur_day].pop_back();
+            }
+            rem -= proc;
+
+            while (cur_day <= i && job_ids[cur_day].size() == 0)
+                cur_day++;
+        }
+
+        printf("0\n");
+    }
+
     return 0;
 }
