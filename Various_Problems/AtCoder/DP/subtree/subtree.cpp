@@ -1,119 +1,87 @@
 #include <bits/stdc++.h>
-#define mp make_pair
-#define pb push_back
 
 using namespace std;
 
-typedef pair<int, int> ii;
+int n, m;
 
-int n, MOD;
-vector<vector<int>> adj_list;
-// How many ways there are for this node to be black(connecting to all other blacks in the subtree)
-vector<long long> dp;
+// dp1[i]: Is the number of ways that i is black and connected to all black nodes in its subtree
+vector<long long> dp1;
+
+// What if you took only the first (or last) i kids of the node
+vector<vector<long long>> pref_dp1;
+vector<vector<long long>> suff_dp1;
+
+// dp2[i]: Number of ways to paint the parent of i black(or white and everything else too) if we exclude the subtree of i
 vector<long long> dp2;
-vector<vector<long long>> pref_dp;
-vector<vector<long long>> suff_dp;
-vector<ii> p;
-vector<long long int> ans;
+vector<set<int>> adj_list;
+vector<vector<int>> actual_list;
+vector<int> p;
 
-long long calc_pow(long long a, long long b, long long mod)
+void init_dfs(int node, int par, int rank)
 {
-    long long c = 1;
-    while (b) {
-        if (b % 2)
-            c = c * a % mod;
-        a = a * a % mod;
-        b /= 2;
-    }
+    adj_list[node].erase(par);
+    actual_list[node].resize(adj_list[node].size());
 
-    return c;
+    suff_dp1[node].resize(adj_list[node].size() + 2);
+    pref_dp1[node].resize(adj_list[node].size() + 2);
+
+    dp1[node] = 1;
+    int pos = 1;
+    pref_dp1[node][0] = 1;
+    for (auto kid : adj_list[node]) {
+        init_dfs(kid, node, pos);
+        dp1[node] = (dp1[node] * (dp1[kid] + 1)) % m;
+        pref_dp1[node][pos] = dp1[kid] + 1;
+        suff_dp1[node][pos] = dp1[kid] + 1;
+        actual_list[node][pos-1] = kid;
+        pos++;
+    }
+    suff_dp1[node][pos] = 1;
+
+    for (int i = 1; i < pos; i++)
+        pref_dp1[node][i] = pref_dp1[node][i] * pref_dp1[node][i - 1] % m;
+    for (int i = pos - 1; i > 0; i--)
+        suff_dp1[node][i] = suff_dp1[node][i] * suff_dp1[node][i + 1] % m;
 }
 
-void calc_dp(int node, int par, int rank)
+void dfs2(int node)
 {
-    dp[node] = 1;
-    pref_dp[node][0] = suff_dp[node][adj_list[node].size()] = 1;
-    p[node] = mp(par, rank);
-    int cnt = 0;
-    for (auto neigh : adj_list[node]) {
-            cnt++;
-        if (neigh != par) {
-            calc_dp(neigh, node, cnt);
-            dp[node] = (dp[node] * (1 + dp[neigh])) % MOD;
-            pref_dp[node][cnt] = 1 + dp[neigh];
-            suff_dp[node][cnt] = 1 + dp[neigh];
-        }
-        else
-            pref_dp[node][cnt] = 1;
-            suff_dp[node][cnt] = 1;
-    }
+    int pos = adj_list[node].size() + 1;
+    for (int i = 1; i < pos; i++)
+        dp2[actual_list[node][i-1]] = 1 + ((pref_dp1[node][i-1] * suff_dp1[node][i+1]) % m) * dp2[node] % m;
 
-    for (int i = 1; i < cnt; i++) {
-        pref_dp[node][i] *= pref_dp[node][i-1];
-        pref_dp[node][i] %= MOD;
-    }
-    for (int i = cnt - 1; i >= 0; i--) {
-        suff_dp[node][i] *= suff_dp[node][i+1];
-        suff_dp[node][i] %= MOD;
-    }
-}
-
-void dfs2(int node, int par)
-{
-    int cnt = adj_list[node].size();
-
-    if (adj_list[node].size() == 1 && par != -1)
-        return;
-
-    if (adj_list[node][0] != par)
-        dp2[adj_list[node][0]] = 1 + dp2[node] * suff_dp[node][1];
-    for (int i = 1; i < cnt - 1; i++)
-        if (adj_list[node][i] != par)
-            dp2[adj_list[node][i]] = 1 + (dp2[node] * pref_dp[node][i-1] * suff_dp[node][i+1]);
-    if (adj_list[node][cnt-1] != par && cnt-2 >= 0)
-        dp2[adj_list[node][cnt-1]] = 1 + dp2[node] * pref_dp[node][cnt-2];
-
-    for (int i = 0; i < cnt; i++)
-        dp2[i] %= MOD;
-
-    for (auto neigh : adj_list[node])
-        if (neigh != par)
-            dfs2(neigh, node);
+    for (auto kid : adj_list[node])
+        dfs2(kid);
 }
 
 int main(void)
 {
-    scanf("%d %d", &n, &MOD);
-    dp.resize(n);
+    scanf("%d %d", &n, &m);
     adj_list.resize(n);
-    ans.resize(n);
     p.resize(n);
-    pref_dp.assign(n + 1, vector<long long>(n + 2));
-    suff_dp.resize(n + 1, vector<long long>(n + 2));
+    dp1.resize(n);
     dp2.resize(n);
-
-    if (n == 1) {
-        printf("%d\n", 1);
-        return 0;
-    }
+    actual_list.resize(n);
+    suff_dp1.resize(n);
+    pref_dp1.resize(n);
 
     for (int i = 0; i < n - 1; i++) {
         int a, b;
         scanf("%d %d", &a, &b);
         a--; b--;
 
-        adj_list[a].pb(b);
-        adj_list[b].pb(a);
+        adj_list[a].insert(b);
+        adj_list[b].insert(a);
     }
 
+    init_dfs(0, -1, 1);
     dp2[0] = 1;
-    calc_dp(0, -1, 0);
-    dfs2(0, -1);
-    ans[0] = dp[0];
-    for (int i = 1; i < n; i++) {
-        ans[i] = dp[i] * dp2[i] % MOD;
+    dfs2(0);
+
+    for (int i = 0; i < n; i++) {
+        long long ans = dp1[i] * dp2[i] % m;
+        printf("%lld\n", ans);
     }
 
-    for (int i = 0; i < n; i++)
-        printf("%lld\n", ans[i]);
+    return 0;
 }
