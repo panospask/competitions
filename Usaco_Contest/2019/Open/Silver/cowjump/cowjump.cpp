@@ -39,71 +39,95 @@ T orient(Point a, Point b, Point c)
     return cross(b - a, c - a);
 }
 
-bool intersect_proper(Segment s1, Segment s2)
+T sign(T a)
 {
-    bool isgood = orient(s1.a, s1.b, s2.a) * orient(s1.a, s1.b, s2.b) < 0;
-    isgood = isgood && orient(s2.a, s2.b, s1.a) * orient(s2.a, s2.b, s1.b);
-
-    return isgood;
+    return a == 0 ? 0 : (a < 0 ? -1 : 1);
 }
 
-bool inDisk(Segment a, Point p)
-{
-    return dot(p - a.a, p - a.b) <= 0;
-}
+const long long VAL = 1e9 + 2;
+const Segment LOW = {{-VAL, -VAL}, {-VAL, -VAL + 1}};
+const Segment HIGH = {{VAL, VAL}, {VAL, VAL + 1}};
 
-bool inside(Segment a, Point p)
-{
-    return inDisk && orient(a.a, a.b, p) == 0;
-}
-
-const long long VAL = 2000000000;
-const Segment LOW = {{-VAL, -VAL}, {-VAL, -VAL}};
-const Segment HIGH = {{VAL, VAL}, {VAL, VAL}};
 int n;
+double x;
 vector<Point> events;
 vector<Segment> all;
 vector<int> intersect_cnt;
 set<Segment> active;
 int ans = -1;
+pair<int, int> check;
 
-bool intersect(Segment s1, Segment s2)
+double eval(Segment s)
 {
-    bool isgood=false;
-    if (intersect_proper(s1, s2))
-        isgood = true;
+    if (s.a.x == s.b.x)
+        return s.a.y;
 
-    if (inside(s1, s2.a) || inside(s1, s2.b) || inside(s2, s1.b))
-        isgood = true;
-
-    if (isgood) {
-        intersect_cnt[s1.id]++;
-        if (intersect_cnt[s1.id] == 2)
-            ans = s1.id;
-        intersect_cnt[s2.id]++;
-        if (intersect_cnt[s2.id] == 2)
-            ans = s2.id;
-    }
-    return isgood;
+    return s.a.y + (s.b.y - s.a.y) * (x - s.a.x) / (s.b.x - s.a.x);
 }
 
-bool operator < (const Point& a, const Point& b)
+bool operator < (const Point a, const Point b)
 {
     if (a.x == b.x)
         return a.y < b.y;
     return a.x < b.x;
 }
 
+bool operator == (const Point a, const Point b)
+{
+    return (a.x == b.x) && (a.y == b.y);
+}
+bool operator <= (const Point a, const Point b)
+{
+    return a < b || a == b;
+}
+
 bool operator < (const Segment& a, const Segment& b)
 {
-    if (a.a.y == b.a.y) {
-        if (a.b.y == b.b.y) {
-            return a.a.x < b.a.x;
-        }
-        return a.b.y < b.b.y;
+    if (a.id == b.id)
+        return false;
+
+    return eval(a) < eval(b);
+}
+
+bool intersect(Segment s1, Segment s2)
+{
+
+    int oa = sign(orient(s2.a, s2.b, s1.a));
+    int ob = sign(orient(s2.a, s2.b, s1.b));
+    int oc = sign(orient(s1.a, s1.b, s2.a));
+    int od = sign(orient(s1.a, s1.b, s2.b));
+
+    if (oa * ob < 0 && oc * od < 0)
+        return true;
+    if (oa * ob <= 0 && oc * od < 0)
+        return true;
+    if (oa * ob < 0 && oc * od <= 0)
+        return true;
+
+    if (oa * ob == 0 && oc * od == 0) {
+        Point m1 = min(s1.a, s1.b);
+        Point m2 = min(s2.a, s2.b);
+        Point M1 = max(s1.a, s1.b);
+        Point M2 = max(s2.a, s2.b);
+
+        if (max(m1, m2) <= min(M1, M2))
+            return true;
     }
 
-    return a.a.y < b.a.y;
+    return false;
+}
+
+int inter(Segment a)
+{
+    int c = 0;
+    for (int i = 0; i < all.size(); i++) {
+        if (i == a.id)
+            continue;
+
+        c += intersect(all[i], a);
+    }
+
+    return c;
 }
 
 int main(void)
@@ -127,42 +151,72 @@ int main(void)
     sort(events.begin(), events.end());
 
     for (auto e : events) {
-        if (active.find(all[e.id]) != active.end()) {
-            Segment s1 = LOW;
-            Segment s2 = HIGH;
-            auto prv = active.lower_bound(all[e.id]);
+        x = e.x;
+        Segment s = all[e.id];
+        if (active.find(s) != active.end()) {
+            // Remove it
+            Segment l = LOW;
+            Segment r = HIGH;
+
+            auto prv = active.find(s);
             if (prv != active.begin()) {
                 prv--;
-                s1 = *prv;
+                l = *prv;
             }
-            prv = active.upper_bound(all[e.id]);
-            if (prv != active.end())
-                s2 = *prv;
+            auto nxt = active.find(s);
+            nxt++;
+            if (nxt != active.end()) {
+                r = *nxt;
+            }
 
-            intersect(s1, s2);
-            active.erase(all[e.id]);
+            if (intersect(l ,r)) {
+                check = mp(l.id, r.id);
+                break;
+            }
+
+            active.erase(s);
         }
         else {
-            Segment s1 = LOW;
-            Segment s2 = HIGH;
-            auto prv = active.lower_bound(all[e.id]);
+            //Add it
+            Segment l = LOW;
+            Segment r = HIGH;
+
+            active.insert(s);
+
+            auto prv = active.find(s);
             if (prv != active.begin()) {
                 prv--;
-                s1 = *prv;
-                intersect(s1, all[e.id]);
+                l = *prv;
             }
-            prv = active.upper_bound(all[e.id]);
-            if (prv != active.end()) {
-                s2 = *prv;
-                intersect(s2, all[e.id]);
+            auto nxt = active.find(s);
+            nxt++;
+            if (nxt != active.end()) {
+                r = *nxt;
             }
 
-            active.insert(all[e.id]);
+            if (intersect(l ,s)) {
+                check = make_pair(l.id, s.id);
+                break;
+            }
+            if (intersect(r ,s)) {
+                check = mp(r.id, s.id);
+                break;
+            }
+
+            active.insert(s);
         }
-
-        if (ans != -1)
-            break;
     }
+
+    // Check the checks
+    int c1 = inter(all[check.first]);
+    int c2 = inter(all[check.second]);
+
+    if (c1 == 1 && c2 == 1)
+        ans = min(check.first, check.second);
+    else if (c1 > 1)
+        ans = check.first;
+    else
+        ans = check.second;
 
     printf("%d\n", ans + 1);
     return 0;
