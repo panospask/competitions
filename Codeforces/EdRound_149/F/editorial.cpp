@@ -1,8 +1,10 @@
 #include <bits/stdc++.h>
+#define mp make_pair
 
 using namespace std;
 
 typedef long long ll;
+typedef pair<int, int> pi;
 
 int n, k;
 vector<int> a;
@@ -14,55 +16,66 @@ bool gcomp(const int& a, const int& b)
 
 bool is_enough(ll x)
 {
-    multiset<int, decltype(gcomp)*> f(gcomp), s(gcomp);
-    multiset<int> remaining;
+    vector<bool> passed;
+    vector<bool> using_s;
+    priority_queue<int> f;
+    vector<pi> rem_s;
+
+    rem_s.resize(n);
+    passed.assign(n, false);
+    using_s.assign(n, false);
 
     ll time_taken_s = 0, time_taken_f = 0;
     int elements_s = 0, elements_f = 0;
-    for (int i = 0; i < n; i++) {
-        remaining.insert(a[i]);
-    }
-    while (!remaining.empty() && time_taken_s + *remaining.begin() <= x) {
-        auto it = remaining.begin();
-        time_taken_s += *it;
-        s.insert(*it);
-        elements_s++;
-        remaining.erase(it);
-    }
 
-    if (elements_f + elements_s >= k)
+    int curp = 0;
+    for (int i = 0; i < n; i++) {
+        rem_s[i] = mp(a[i], i);
+    }
+    sort(rem_s.begin(), rem_s.end());
+
+    while (curp < n && time_taken_s + rem_s[curp].first <= x) {
+        int val, place;
+        tie(val, place) = rem_s[curp];
+        curp++;
+        using_s[place] = true;
+        time_taken_s += val;
+        elements_s++;
+    }
+    if (elements_s + elements_f >= k)
         return true;
 
-    // Iterate over all possibilities
     for (int i = 0; i < n; i++) {
-        auto it = s.find(a[i]);
-        if (it != s.end()) {
-            s.erase(it);
-            time_taken_s -= a[i];
+        if (using_s[i]) {
             elements_s--;
-            while (!remaining.empty() && time_taken_s + *remaining.begin() <= x) {
-                auto it = remaining.begin();
-                time_taken_s += *it;
+            time_taken_s -= a[i];
+            using_s[i] = false;
+            while (curp < n && time_taken_s + rem_s[curp].first <= x) {
+                int val, place;
+                tie(val, place) = rem_s[curp];
+                curp++;
+
+                if (passed[place])
+                    continue;
+
+                time_taken_s += val;
+                using_s[place] = true;
                 elements_s++;
-                s.insert(*it);
-                remaining.erase(it);
             }
         }
-        else {
-            remaining.erase(remaining.find(a[i]));
-        }
 
-        if (a[i] + time_taken_f <= x) {
-            f.insert(a[i]);
+        if (time_taken_f + a[i] <= x) {
+            f.push(a[i]);
             time_taken_f += a[i];
             elements_f++;
         }
-        else if (a[i] < *f.begin()) {
-            time_taken_f += a[i] - *f.begin();
-            f.erase(f.begin());
-            f.insert(a[i]);
+        else if (!f.empty() && a[i] < f.top()) {
+            time_taken_f += a[i] - f.top();
+            f.pop();
+            f.push(a[i]);
         }
 
+        passed[i] = true;
         if (elements_f + elements_s >= k)
             return true;
     }
