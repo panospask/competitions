@@ -121,6 +121,7 @@ void solve(void)
 
             if (seq[i] == 1) {
                 total_diff -= 2;
+
                 seq[i] = -1;
                 continuous_left.set(i, false);
 
