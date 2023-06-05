@@ -6,36 +6,40 @@
 
 using namespace std;
 
+typedef long long ll;
 typedef pair<int, int> pi;
+typedef pair<ll, int> pli;
 
 struct Edge {
     int a, b;
     int w;
 };
 
-const int INF = 1e9;
+const ll INF = 1e18;
 
 int n, m, S, T;
 vector<Edge> edges;
 vector<vector<pi>> adj_list;
-vector<int> dist;
-vector<int> rdist;
+vector<ll> dist;
+vector<ll> rdist;
 vector<int> par;
 vector<vector<int>> kids;
 vector<bool> visited;
 vector<int> rep_level;
-vector<int> ans;
-vector<vector<int>> dist_between;
+vector<ll> ans;
+map<pi, int> dist_between;
 
 void assign_rep_levels(int node, int lvl)
 {
-    rep_level[node] = max(rep_level[node], lvl);
+    if (rep_level[node] == -1) {
+        rep_level[node] = lvl;
+    }
 
     for (auto kid : kids[node])
         assign_rep_levels(kid, rep_level[node]);
 }
 
-void calc_sssp(int source, priority_queue<pi, vector<pi>, greater<pi>>& q, vector<int>& d, bool track)
+void calc_sssp(int source, priority_queue<pli, vector<pli>, greater<pli>>& q, vector<ll>& d, bool track)
 {
     visited.assign(n, false);
 
@@ -51,9 +55,9 @@ void calc_sssp(int source, priority_queue<pi, vector<pi>, greater<pi>>& q, vecto
             kids[par[v]].pb(v);
 
         for (auto e : adj_list[v]) {
-            if (d[e.f] > d[v] + e.s) {
-                d[e.f] = d[v] + e.s;
-                q.push(mp(d[e.f], e.f));
+            if (dist[e.f] > dist[v] + e.s) {
+                dist[e.f] = dist[v] + e.s;
+                q.push(mp(dist[e.f], e.f));
 
                 if (track)
                     par[e.f] = v;
@@ -73,7 +77,6 @@ int main(void)
     kids.resize(n);
     visited.assign(n, false);
     par.assign(n, -1);
-    dist_between.resize(n, vector<int>(n));
 
     for (int i = 0; i < m; i++) {
         int u, v, w;
@@ -83,14 +86,15 @@ int main(void)
         adj_list[u].pb(mp(v, w));
         adj_list[v].pb(mp(u, w));
         edges[i] = {v, u, w};
-        dist_between[v][u] = dist_between[u][v] = w;
+        dist_between[mp(v, u)] = w;
+        dist_between[mp(u, v)] = w;
     }
 
     dist.assign(n, INF);
     rdist.assign(n, INF);
 
-    priority_queue<pi, vector<pi>, greater<pi>> q;
-    priority_queue<pi, vector<pi>, greater<pi>> rq;
+    priority_queue<pli, vector<pli>, greater<pli>> q;
+    priority_queue<pli, vector<pli>, greater<pli>> rq;
 
     int k;
     scanf("%d", &k);
@@ -105,7 +109,8 @@ int main(void)
             dist[v] = 0;
         }
         else {
-            int w = dist_between[v][prv];
+            // Find edge
+            int w = dist_between[mp(v, prv)];
 
             rdist[prv] = w;
             dist[v] = dist[prv] + w;
@@ -123,24 +128,21 @@ int main(void)
             rdist[v] += rdist[prv];
 
         rq.push(mp(rdist[v], v));
-        prv = v;
+        prv= v;
     }
 
     calc_sssp(S, q, dist, true);
     calc_sssp(T, rq, rdist, false);
 
     ans.assign(k, INF);
-
     assign_rep_levels(S, 0);
 
     for (auto& e : edges) {
         if (rep_level[e.a] == -1 || rep_level[e.b] == -1)
             continue;
-
         if (rep_level[e.a] > rep_level[e.b])
             swap(e.a, e.b);
-
-        if (par[e.b] == e.a) // The edge is already on the tree
+        if (par[e.b] == e.a)
             continue;
 
         for (int j = rep_level[e.a]; j != rep_level[e.b]; j++)
@@ -152,6 +154,6 @@ int main(void)
         if (ans[i] == INF)
             printf("-1\n");
         else
-            printf("%d\n", ans[i]);
+            printf("%lld\n", ans[i]);
     }
 }
