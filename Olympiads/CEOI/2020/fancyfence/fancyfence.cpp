@@ -49,10 +49,13 @@ int main(void)
 
     for (int i = 1; i <= n; i++) {
 
-        while (h[s.top()] > h[i]) {
-            ll width = w[s.top()] + startp[i] - pos[s.top()];
+        ll prv_add = 0;
+
+        while (h[s.top()] >= h[i]) {
+            w[s.top()] += prv_add;
+            ll width = w[s.top()];
             ans += possible_squares(width, h[s.top()]);
-            w[i] += w[s.top()];
+            prv_add = w[s.top()];
             s.pop();
 
             int hrm = max(h[i], h[s.top()]);
@@ -61,13 +64,22 @@ int main(void)
             ans = (((ans % MOD) + MOD) % MOD);
         }
 
-        if (h[i] > h[s.top()])
-            s.push(i);
+        w[i] += prv_add;
+        s.push(i);
     }
 
+    ll prv_add = 0;
+
     while (s.size() > 1) {
-        ll width = w[s.top()] + pos.back() - pos[s.top()];
+        w[s.top()] += prv_add;
+
+        ll width = w[s.top()];
+        prv_add = w[s.top()];
         ans += possible_squares(width, h[s.top()]);
+
+        if (h[s.top()] == 1)
+            assert(width == pos.back());
+
         s.pop();
 
         ans -= possible_squares(width, h[s.top()]);
