@@ -98,10 +98,8 @@ void solve(void)
     scanf("%d %d", &R, &C);
 
     ans = 0;
-    grid.clear();
-    cons_up.clear();
-    grid.resize(R, vector<int>(C));
-    cons_up.resize(R, vector<int>(C));
+    grid.assign(R, vector<int>(C));
+    cons_up.assign(R, vector<int>(C));
 
     for (int i = 0; i < R; i++)
         for (int j = 0; j < C; j++)

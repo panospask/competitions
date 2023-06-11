@@ -1,67 +1,68 @@
 #include <bits/stdc++.h>
+#define mp make_pair
 
 using namespace std;
 
-typedef pair<int, int> ii;
+typedef pair<int, int> pi;
 
-struct empodiostart {
-    int pos;
+struct State {
     int val;
-    int max_between;
-    int highest_used;
+    int pos;
+    int max_val;
+    int latest_able;
 };
 
 int n;
-vector<int> seq;
-stack<empodiostart> pos_begin;
-vector<ii> anspos;
-set<int> used;
+vector<State> s;
+vector<int> a;
+set<int> inserted;
+vector<pi> ans;
+
+bool empodio(State st, int a, int apos)
+{
+    if (st.max_val > a)
+        return false;
+
+    return apos - st.pos == a - st.val;
+}
 
 int main(void)
 {
     scanf("%d", &n);
-    seq.resize(n);
+    a.resize(n);
+    inserted.insert(n - 1);
+
     for (int i = 0; i < n; i++)
-        scanf("%d", &seq[i]);
+        scanf("%d", &a[i]);
 
-    int minele, maxele, pos;
+    // s.push_back({0, 0, 0, n - 1});
     for (int i = 0; i < n; i++) {
-        while (!pos_begin.empty() && pos_begin.top().val > seq[i]) {
-            maxele = max(maxele, pos_begin.top().max_between);
-            pos_begin.pop();
+        while (!s.empty() && s.back().val > a[i]) {
+            int pmax = s.back().max_val;
+            s.pop_back();
+            if (!s.empty())
+                s.back().max_val = max(s.back().max_val, pmax);
+        }
+        while (!s.empty() && !empodio(s.back(), a[i], i) && s.back().latest_able <= max(a[i], s.back().max_val)) {
+            int pmax = s.back().max_val;
+            s.pop_back();
+            if (!s.empty())
+                s.back().max_val = max(s.back().max_val, pmax);
+        }
+        if (!s.empty() && empodio(s.back(), a[i], i)) {
+            ans.push_back(mp(s.back().pos, i));
+            s.clear();
         }
 
-        maxele = max(maxele, seq[i]);
-        if (!pos_begin.empty() && maxele == seq[i]) {
-            // Check if it's an empodio
-            int minele = pos_begin.top().val;
-            if (maxele - minele == i - pos_begin.top().pos) {
-                anspos.push_back(make_pair(pos_begin.top().pos, i));
-                while (!pos_begin.empty()) {
-                    pos_begin.pop();
-                }
-            }
-            else {
-                empodiostart cur;
-                cur.max_between = maxele;
-                cur.pos = i;
-                cur.val = seq[i];
-                cur.highest_used;
-                maxele = 0;
-
-                pos_begin.push(cur);
-            }
-        }
-        else {
-            empodiostart cur;
-            cur.max_between = maxele;
-            cur.pos = i;
-            cur.val = seq[i];
-            maxele = 0;
-
-            pos_begin.push(cur);
-        }
-
+        int minrm = *inserted.upper_bound(a[i]);
+        s.push_back({a[i], i, a[i], minrm});
+        inserted.insert(a[i]);
     }
-    printf("%d\n", (int)anspos.size());
+
+    printf("%d\n", (int)ans.size());
+    for (auto p : ans) {
+        printf("%d %d\n", p.first + 1, p.second + 1);
+    }
+
+    return 0;
 }
