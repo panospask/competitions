@@ -11,6 +11,8 @@ vector<vector<int>> adj_list;
 int dfs(int node, int par, int k)
 {
     multiset<int> kidpaths;
+    int left = -1;
+    int smallpaths = 0;
 
     for (auto neigh : adj_list[node]) {
         if (neigh == par)
@@ -19,54 +21,53 @@ int dfs(int node, int par, int k)
         int res = dfs(neigh, node, k);
         if (res == -1)
             return -1;
+        res++;
 
         if (res != 0) {
             kidpaths.insert(res);
+            if (res < k)
+                smallpaths++;
         }
     }
 
-    while (kidpaths.size() > 2 && *kidpaths.begin() < k) {
-        int small = *kidpaths.begin();
+    int posans = 0;
 
-        if (2 * small >= k) {
-            // We reached the point
-            while (kidpaths.size() > 2 && *kidpaths.begin() < k) {
-                kidpaths.erase(kidpaths.begin());
-                kidpaths.erase(kidpaths.begin());
-            }
+    while (smallpaths > 0) {
+        int v = *kidpaths.begin();
+
+        if (smallpaths == 1 && left == -1 && par != -1)
+            posans = v;
+
+        smallpaths--;
+        kidpaths.erase(kidpaths.begin());
+
+        auto it = kidpaths.lower_bound(k - v);
+        if (it == kidpaths.end()) {
+            if (left == -1)
+                left = v;
+            else
+                return -1;
         }
         else {
-            auto it = kidpaths.lower_bound(k - small);
-            if (it == kidpaths.end()) {
-                return -1;
-            }
-            else {
-                kidpaths.erase(it);
-                kidpaths.erase(kidpaths.begin());
-            }
+            if (*it < k)
+                smallpaths--;
+            kidpaths.erase(it);
         }
     }
 
-    int len = par != -1;
-    if (kidpaths.size() == 2) {
-        if (*kidpaths.rbegin() + *kidpaths.begin() < k)
-            return -1;
-        if (*kidpaths.rbegin() >= k && par != -1) {
-            len += *kidpaths.begin();
-        }
-    }
-    else if (kidpaths.size() == 1) {
-        len += *kidpaths.begin();
-    }
+    if (left != -1)
+        return left;
 
-    return len;
+    if (!kidpaths.empty())
+        posans = max(posans, *kidpaths.rbegin());
+    return posans;
 }
 
 bool works(int val)
 {
-    int ans = dfs(0, -1, val);
+    int res = dfs(0, -1, val);
 
-    return ans == 0 || ans >= val;
+    return res == 0 || res >= val;
 }
 
 int main(void)
