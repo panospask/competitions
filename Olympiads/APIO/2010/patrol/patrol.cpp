@@ -67,7 +67,31 @@ void calculate_inside(int node, int par)
 
 void calculate_outside(int node, int par)
 {
-    path_outside[node] = fully_outside[node] = 0;
+    int f1 = 0, f2 = 0, ch1 = -1;
+    for (auto neigh : adj_list[node]) {
+        if (neigh == par)
+            continue;
+
+        if (fully_inside[neigh] > f1) {
+            ch1 = neigh;
+
+            f2 = f1;
+            f1 = fully_inside[neigh];
+        }
+        else if (fully_inside[neigh] > f2) {
+            f2 = fully_inside[neigh];
+        }
+    }
+    for (auto neigh : adj_list[node]) {
+        if (neigh == par) continue;
+
+        if (neigh == ch1)
+            fully_outside[neigh] = f2;
+        else
+            fully_outside[neigh] = f1;
+    }
+
+    path_outside[node] = 0;
     if (par != -1) {
         if (topkid[par] == node)
             path_outside[node] = second_inside[par];
@@ -78,7 +102,7 @@ void calculate_outside(int node, int par)
         path_outside[node]++;
 
         // Find the best full outside path
-        fully_outside[node] = fully_outside[par];
+        fully_outside[node] = max(fully_outside[par], fully_outside[node]);
         int p1, p2;
         if (topkid[par] == node || seckid[par] == node) {
             p2 = max(path_outside[par], third_inside[par]);
@@ -116,7 +140,7 @@ int main(void)
     third_inside.resize(n);
     topkid.resize(n);
     path_outside.resize(n);
-    fully_outside.resize(n);
+    fully_outside.assign(n, 0);
     seckid.resize(n);
     fourth_inside.resize(n);
 
