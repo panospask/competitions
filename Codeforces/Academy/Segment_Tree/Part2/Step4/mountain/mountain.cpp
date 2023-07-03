@@ -7,7 +7,7 @@ using namespace std;
 typedef long long ll;
 
 struct SegTree {
-    const int NO_OP = 0;
+    const int NO_OP = INT_MAX;
 
     struct Node {
         ll total;
@@ -31,10 +31,9 @@ struct SegTree {
         if (op == NO_OP)
             return;
 
-        a->change += op;
-        a->total += op * len;
-        // a->max += op * len;
-        a->max = max(a->max, 0ll);
+        a->change = op;
+        a->total = op * len;
+        a->max = max(a->total, 0ll);
     }
 
     void init(int n) {
@@ -55,36 +54,38 @@ struct SegTree {
         x->change = NO_OP;
     }
 
-    void modify(int l, int r, int v, Node* x, int lx, int rx) {
+    Node* modify(int l, int r, int v, Node* x, int lx, int rx) {
         if (x == null)
             x = new Node(0, 0, null, null);
 
         if (lx >= r || l >= rx) {
-            return;
+            return x;
         }
         else if (l <= lx && rx <= r) {
             make_mod(x, v, rx - lx);
-            return;
+            return x;
         }
 
         propagate(x, lx, rx);
 
         int mid = (lx + rx) / 2;
-        modify(l, r, v, x->l, lx, mid);
-        modify(l, r, v, x->r, mid, rx);
+        x->l = modify(l, r, v, x->l, lx, mid);
+        x->r = modify(l, r, v, x->r, mid, rx);
 
         x->total = x->l->total + x->r->total;
         x->max = max(x->l->max, x->l->total + x->r->max);
+
+        return x;
     }
     void modify(int l, int r, int v) {
-        modify(l, r, v, root, 0, size);
+        root = modify(l, r, v, root, 0, size);
     }
 
     int find_pos(ll h, Node* x, int lx, int rx) {
         if (x->max <= h)
             return -1;
-        if (x == null)
-            x = new Node(0, 0, null, null);
+
+        assert(x != null);
 
         if (lx == rx - 1)
             return lx;
@@ -94,7 +95,7 @@ struct SegTree {
         int mid = (lx + rx) / 2;
         int res = find_pos(h, x->l, lx, mid);
         if (res == -1)
-            res = find_pos(h + x->l->total, x->r, mid, rx);
+            res = find_pos(h - x->l->total, x->r, mid, rx);
 
         return res;
     }
