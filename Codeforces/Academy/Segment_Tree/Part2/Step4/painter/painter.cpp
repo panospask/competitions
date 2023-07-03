@@ -26,7 +26,6 @@ struct SegTree {
 
         if (a.joinright && b.joinleft) {
             c.num--;
-            c.len++;
         }
 
         c.joinleft = a.joinleft;
@@ -72,7 +71,7 @@ struct SegTree {
         int mid = (lx + rx) / 2;
 
         make_mod(tree[2 * x + 1], operations[x], mid - lx);
-        make_mod(tree[2 * x + 2], operations[x], rx - mid - 1);
+        make_mod(tree[2 * x + 2], operations[x], rx - mid);
         make_mod(operations[2 * x + 1], operations[x]);
         make_mod(operations[2 * x + 2], operations[x]);
 
@@ -80,7 +79,7 @@ struct SegTree {
     }
 
     void modify(int l, int r, int op, int x, int lx, int rx) {
-        if (l > rx || lx > r) {
+        if (l >= rx || lx >= r) {
             return;
         }
         else if (l <= lx && rx <= r) {
@@ -93,15 +92,15 @@ struct SegTree {
 
         int mid = (lx + rx) / 2;
         modify(l, r, op, 2 * x + 1, lx, mid);
-        modify(l, r, op, 2 * x + 2, mid + 1, rx);
+        modify(l, r, op, 2 * x + 2, mid, rx);
 
         tree[x] = merge(tree[2 * x + 1], tree[2 * x + 2]);
     }
     void make_white(int l, int r) {
-        modify(l, r, 2, 0, 0, size - 1);
+        modify(l, r, 2, 0, 0, size);
     }
     void make_black(int l, int r) {
-        modify(l, r, 1, 0, 0, size - 1);
+        modify(l, r, 1, 0, 0, size);
     }
 
     pi total(void) {
@@ -116,7 +115,7 @@ int main(void)
 {
     scanf("%d", &n);
 
-    st.init(2 * MAXC);
+    st.init(2 * MAXC + 10);
     while (n--) {
         int x, l;
         char c;
