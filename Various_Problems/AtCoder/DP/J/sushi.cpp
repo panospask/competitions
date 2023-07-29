@@ -2,28 +2,41 @@
 
 using namespace std;
 
+const int MAXN = 300;
+
 int N;
 vector<int> a;
+int v[3];
+double dp[MAXN + 1][MAXN + 1][MAXN + 1];
 
-// Expected operations if we only consider the subarray [0..i]
-vector<double> dp;
+double calculate_dp(int a, int b, int c)
+{
+    if (a < 0 || b < 0 || c < 0)
+        return -1;
+    else if (a + b + c == 0)
+        return 0;
+    else if (dp[a][b][c] != 0)
+        return dp[a][b][c];
+
+    dp[a][b][c] = 0;
+    dp[a][b][c] = N + a * calculate_dp(a - 1, b, c) + b * calculate_dp(a + 1, b - 1, c) + c * calculate_dp(a, b + 1, c - 1);
+    dp[a][b][c] /= (a + b + c);
+
+    return dp[a][b][c];
+}
 
 int main(void)
 {
     scanf("%d", &N);
 
-    a.resize(N + 1);
-    for (int i = 1; i <= N; i++)
+    a.resize(N);
+    for (int i = 0; i < N; i++) {
         scanf("%d", &a[i]);
-
-    dp.resize(N + 1);
-    dp[0] = 0;
-    for (int i = 1; i <= N; i++) {
-        double extra = dp[i - 1] / i;
-        extra = extra + i * max(0.0, (double)a[i] - extra);
-
-        dp[i] = dp[i - 1] + extra;
+        v[a[i] - 1]++;
     }
 
-    printf("%.10lf\n", dp[N]);
+    double ans = calculate_dp(v[0], v[1], v[2]);
+    printf("%.10lf\n", ans);
+
+    return 0;
 }
