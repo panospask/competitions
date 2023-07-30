@@ -4,12 +4,14 @@
 
 using namespace std;
 
+struct Cow {
+    int p, x, c;
+};
+
 int N, A, B;
-vector<vector<int>> dp;
-vector<vector<int>> prv;
-vector<int> p;
-vector<int> x;
-vector<int> c;
+vector<int> cones;
+vector<int> mooney;
+vector<Cow> cows;
 
 int main(void)
 {
@@ -18,47 +20,49 @@ int main(void)
 
     scanf("%d %d %d", &N, &A, &B);
 
-    p.resize(N);
-    x.resize(N);
-    c.resize(N);
+    cows.resize(N);
     for (int i = 0; i < N; i++) {
-        scanf("%d %d %d", &p[i], &c[i], &x[i]);
+        scanf("%d %d %d", &cows[i].p, &cows[i].c, &cows[i].x);
     }
 
-    dp.resize(A + 1, vector<int>(B + 1));
-    prv.resize(A + 1, vector<int>(B + 1));
-    dp[0][0] = 0;
-    for (int cur = 0; cur < N; cur++) {
-        for (int i = A; i >= 0; i--)
-            for (int j = B; j >= 0; j--) {
-                // Contribute normally
-                int n_i = i + c[cur];
-                int n_j = j;
+    sort(cows.begin(), cows.end(), [] (const Cow& a, const Cow& b) {return a.x < b.x;});
 
-                while (n_j <= B) {
-                    if (n_i <= A && n_i >= i) {
-                        dp[n_i][n_j] = max(dp[n_i][n_j], prv[i][j] + p[cur]);
-                    }
+    cones.resize(B + 1);
+    mooney.resize(A + 1);
 
-                    n_j += x[cur];
-                    n_i--;
-                }
+    for (auto& cur : cows) {
+        // Process in reverse => Mooney first, cones after
+
+        for (int v = A - cur.c; v >= 0; v--) {
+            mooney[v + cur.c] = max(mooney[v + cur.c], mooney[v] + cur.p);
+        }
+
+        for (int v = B; v >= 0; v--) {
+            int rem = B - v;
+
+            int discounts = rem / cur.x;
+            if (discounts >= cur.c) {
+                int res = v + cur.x * cur.c;
+                cones[res] = max(cones[res], cones[v] + cur.p);
             }
-
-        for (int i = 0; i <= A; i++)
-            for (int j = 0; j <= B; j++) {
-                if (i) {
-                    dp[i][j] = max(dp[i][j], dp[i - 1][j]);
-                }
-                if (j) {
-                    dp[i][j] = max(dp[i][j], dp[i][j - 1]);
-                }
+            else {
+                // Apply these discounts and add some mooney
+                int res = cur.c - discounts;
+                mooney[res] = max(mooney[res], cones[v] + cur.p);
             }
+        }
 
-        prv = dp;
+        // Propagate these changes
+        for (int v = 1; v <= B; v++) {
+            cones[v] = max(cones[v], cones[v - 1]);
+        }
+        mooney[0] = max(mooney[0], cones[B]);
+        for (int v = 1; v <= A; v++) {
+            mooney[v] = max(mooney[v], mooney[v - 1]);
+        }
     }
 
-    printf("%d\n", dp[A][B]);
+    printf("%d\n", mooney[A]);
 
     return 0;
 }
