@@ -85,7 +85,7 @@ void init(int n, int l, int X[])
 {
     N = n;
     L = l;
-    BLOCK_SIZE = sqrt(N);
+    BLOCK_SIZE = 500;
 
     loc.resize(N);
 
@@ -153,7 +153,7 @@ int update(int pos, int y)
 {
     // After some updates, rebuild
     upd++;
-    if (upd == 2 * BLOCK_SIZE) {
+    if (upd == 490) {
         blocks.clear();
         vector<int> p = loc;
         sort(p.begin(), p.end());
