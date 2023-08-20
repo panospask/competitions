@@ -152,6 +152,11 @@ void decode(int N, int L, int X[])
         done = true;
     }
 
+    if (!L) {
+        for (int i = 0; i < N; i++)
+            output(255);
+        return;
+    }
 
     sort(X, X + L);
     reverse(X, X + L);

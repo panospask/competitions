@@ -169,6 +169,14 @@ void encode(int N, int M[])
         done = true;
     }
 
+    bool edge = true;
+    for (int i = 0; i < N; i++)
+        edge = edge && M[i] == BASE - 1;
+
+    if (edge) {
+        return;
+    }
+
     int i;
     vector<int> v;
     for(i=0; i<N; i++)
