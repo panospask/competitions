@@ -21,6 +21,11 @@ int construct(vector<vector<int>> p)
     members.resize(N);
     b.assign(N, vector<int>(N, 0));
 
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+            if (p[i][j] == 3)
+                return 0;
+
     for (int i = 0; i < N; i++) {
         if (!leader[i])
             continue;

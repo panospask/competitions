@@ -183,8 +183,8 @@ ll find_maximum(int k, vector<vector<int>> X)
         for (int j = 0; j < M; j++)
             sub2 = sub2 && x[i][j] <= 1;
 
-    if (sub2)
-        return subtask_2();
+    // if (sub2)
+        // return subtask_2();
 
     pref.resize(N, vector<ll>(M + 1));
     suff.resize(N, vector<ll>(M + 1));
