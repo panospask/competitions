@@ -4,51 +4,47 @@
 
 using namespace std;
 
-
 typedef long long ll;
 
 const int MAXV = 1e5 + 1;
 const ll TOTALMAX = 1e18;
 const int N = 60;
+const int MAXINC = 100;
 
 ll X;
 vector<ll> A;
 
-ll subtask1(void)
+vector<vector<ll>> dp;
+
+ll subtask2(void)
 {
-    ll ans = 1;
-
-    ll tot = 0;
     for (int i = 0; i < N; i++) {
-        ll target = (1ll << i);
-
-        if (tot + A[i] * target >= target) {
-            ans *= 2;
-            tot += (A[i] - 1) * target;
-            A[i] = 1;
-        }
-        else {
-            // Take what is missing in order to complete the number
-            ll rem = target - tot;
-            ll add = 1;
-
-            for (int j = i; j >= 0; j--) {
-                if (A[j]) {
-                    if (rem > 0)
-                        rem -= (1ll << j);
-                    else
-                        add *= 2;
-                }
+        if (A[i] >= X + 2) {
+            int keep;
+            if ((A[i] - X) % 2) {
+                ;
             }
-
-            if (rem <= 0)
-                ans += add;
+            else {
+                ;
+            }
         }
     }
 
-    return ans;
-}
+    dp.assign(N + 1 , vector<ll>(X, 0));
+    dp[N][0] = 1;
 
+    // Everything nullified --> Only 1 solution (0)
+    for (int i = N - 1; i >= 0; i--) {
+        for (int inc = 0; inc < MAXINC; inc++) {
+            dp[i][inc] = dp[i + 1][(inc + A[i]) / 2];
+            if (inc + A[i] >= X) {
+                dp[i][inc] += dp[i + 1][(inc + A[i] - X) / 2];
+            }
+        }
+    }
+
+    return dp[0][0];
+}
 bool can_make(ll v)
 {
     vector<ll> tmp = A;
@@ -74,8 +70,8 @@ ll count_tastiness(ll x, vector<ll> a)
     A.resize(N);
     X = x;
 
-    if (x == 1) {
-        return subtask1();
+    if (x <= 10000) {
+        return subtask2();
     }
 
     ll ans = 0;
