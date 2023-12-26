@@ -1,4 +1,4 @@
-/* USER: pask
+/* USER: user061.36pdp
 LANG: C++
 TASK: olivetrees */
 
@@ -18,30 +18,33 @@ int main(void)
 
     scanf("%d %d", &N, &M);
 
-    open.resize(M);
+    open.resize(M + 1);
 
-    for (int i = 0; i < M; i++) {
+    for (int i = 1; i <= M; i++) {
         int T;
         scanf("%d", &T);
         open[i] = N - T;
     }
 
+    open[0] = 0;
     stack<int> s;
-    ans = 0;
-    int least = INT_MAX;
-    for (int i = 0; i < M; i++) {
-        while (!s.empty() && open[s.top()] > open[i]) {
+    s.push(0);
+
+    int ans = 0;
+
+    for (int i = 1; i <= M; i++) {
+        while (open[s.top()] > open[i]) {
             ans = max(ans, open[s.top()] * (i - s.top()));
             s.pop();
         }
 
-        least = min(least, open[i]);
-
-        if (s.empty() || open[s.top()] < open[i])
+        if (open[s.top()] < open[i])
             s.push(i);
     }
-    ans = max(ans, open[s.top()] * (M - s.top()));
-    ans = max(ans, least * M);
+    while (!s.empty()) {
+        ans = max(ans, open[s.top()] * (M + 1 - s.top()));
+        s.pop();
+    }
 
     printf("%d\n", ans);
 
