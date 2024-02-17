@@ -1,102 +1,126 @@
 #include <bits/stdc++.h>
-#define pb push_back
-#define mp make_pair
-#define MAXN (int)(1e4 * 5)
 
 using namespace std;
 
-struct cow
-{
-    int weight;
-    int position;
-    int direction;
-    int index;
+struct cow {
+    int w, x, d;
 
-    void read_cow(int ind) {
-        scanf("%d %d %d", &weight, &position, &direction);
-        index = ind;
+    void read_cow(void) {
+        scanf("%d %d %d", &w, &x, &d);
+        if (d == -1)
+            d = 0;
+        d = !d;
     }
 };
+
 typedef struct cow Cow;
 
-bool operator < (Cow a, Cow b)
+int N, L, W, T;
+
+int pt[2], weightsum, meetings;
+int add[2] = {L, 0};
+int mul[2] = {-1, 1};
+
+
+vector<Cow> cows;
+vector<int> pos[2];
+
+bool operator < (const Cow& a, const Cow& b)
 {
-    return a.position < b.position;
+    return a.x < b.x;
 }
 
-Cow cows[MAXN];
-int sz, n;
-set<Cow> left_moving_cows;
-set<Cow> right_moving_cows;
-int weight_ttl;
-int latest_time = 0;
+int calc_time(int d)
+{
+    if (pt[d] == pos[d].size() || pt[d] == -1)
+        return INT_MAX;
 
-vector<int> left_cow_pos;
-vector<int> right_cow_pos;
+    return add[d] + mul[d] * pos[d][pt[d]];
+}
+
+void add_cow(int d)
+{
+    T = calc_time(d);
+
+    Cow c;
+    if (!d) {
+        c = cows[N - 1 - pt[d]];
+    }
+    else {
+        c = cows[pt[d]];
+    }
+
+    pt[d]++;
+    weightsum += c.w;
+}
+
+void calculate_meetings(Cow c)
+{
+    if (c.d == 0) {
+        // Moves right
+        int initial = upper_bound(pos[1].begin(), pos[1].end(), c.x) - pos[1].begin();
+        int final = upper_bound(pos[1].begin(), pos[1].end(), c.x + 2 * T) - pos[1].begin();
+
+        meetings += final - initial;
+    }
+    else {
+        // Moves left
+        int initial = lower_bound(pos[0].begin(), pos[0].end(), c.x) - pos[0].begin();
+        int final = lower_bound(pos[0].begin(), pos[0].end(), c.x - 2 * T) - pos[0].begin();
+
+        meetings += initial - final;
+    }
+
+    return;
+}
 
 int main(void)
 {
     freopen("meetings.in", "r", stdin);
     freopen("meetings.out", "w", stdout);
 
-    scanf("%d %d", &sz, &n);
-    for (int i = 0; i < n; i++) {
-        cows[i].read_cow(i);
-        weight_ttl += cows[i].weight;
-        if (cows[i].direction == -1) {
-            left_moving_cows.insert(cows[i]);
-            left_cow_pos.pb(cows[i].position);
+    scanf("%d %d", &N, &L);
+    add[0] = L;
+    cows.resize(N);
+
+    W = 0;
+    for (int i = 0; i < N; i++) {
+        cows[i].read_cow();
+        W += cows[i].w;
+        pos[cows[i].d].push_back(cows[i].x);
+    }
+    W = ceil((double)W / 2);
+
+    sort(cows.begin(), cows.end());
+
+    sort(pos[1].begin(), pos[1].end());
+    sort(pos[0].rbegin(), pos[0].rend());
+
+    weightsum = 0;
+    pt[0] = pt[1] = 0;
+
+    while (weightsum < W) {
+        T = INT_MAX;
+
+        for (int d = 0; d <= 1; d++) {
+            T = min(T, calc_time(d));
         }
-        else {
-            right_moving_cows.insert(cows[i]);
-            right_cow_pos.pb(cows[i].position);
+
+        for (int d = 0; d <= 1; d++) {
+            if (T == calc_time(d))
+                add_cow(d);
         }
     }
 
-    sort(left_moving_cows.begin(), left_moving_cows.end());
-    sort(right_moving_cows.rbegin(), right_moving_cows.rend());
-    Cow leftcow, rightcow;
-    int cur_weight = 0;
-    Cow to_remove;
-    while (2 * cur_weight < weight_ttl) {
-        leftcow = *(left_moving_cows.begin());
-        rightcow = *(right_moving_cows.rbegin());
+    sort(pos[0].begin(), pos[0].end());
 
-        if (leftcow.position < sz - rightcow.position) {
-            right_moving_cows.insert(leftcow);
-            to_remove = *(right_moving_cows.begin());
-            right_moving_cows.erase(to_remove);
-            cur_weight += to_remove.weight;
-
-            latest_time = to_remove.position;
-        }
-        else {
-            left_moving_cows.insert(rightcow);
-            to_remove = *(left_moving_cows.rbegin());
-            left_moving_cows.erase(to_remove);
-            cur_weight += to_remove.weight;
-
-            latest_time = sz - to_remove.position;
-        }
+    meetings = 0;
+    for (int i = 0; i < N; i++) {
+        calculate_meetings(cows[i]);
     }
+    meetings /= 2;
 
-    // Find the range of cows that every cow will collide with
-    int dist_from = 2 * latest_time;
-    int curval_low = 0;
-    int curval_high = 0;
-    long long int collisions;
-    for (auto p : left_cow_pos) {
-        while (curval_low < right_cow_pos.size() && right_cow_pos[curval_low] < p) {
-            curval_low++;
-        }
-        curval_high = max(curval_high, curval_low);
-        while (curval_high < right_cow_pos.size() && right_cow_pos[curval_high] + 2 * latest_time < p) {
-            curval_high++;
-        }
+    printf("%d\n", meetings);
 
-        collisions += curval_high - curval_low;
-    }
-
-    printf("%lld\n", collisions);
     return 0;
 }
