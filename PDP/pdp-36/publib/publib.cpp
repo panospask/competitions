@@ -1,3 +1,7 @@
+/* USER: user061.36pdp
+LANG: C++
+TASK: publib */
+
 #include <bits/stdc++.h>
 #define pb push_back
 
