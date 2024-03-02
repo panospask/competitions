@@ -1,60 +1,65 @@
 #include <bits/stdc++.h>
+#define mp make_pair
 
 using namespace std;
 
+typedef pair<int, int> pi;
+
+struct Leftpoint {
+    int x;
+    vector<int> right;
+};
+
 int N;
-vector<int> l, r;
-vector<int> balls;
-set<int> placed;
-set<int> avail;
+vector<Leftpoint> leftpoints;
+priority_queue<int, vector<int>, greater<int>> rightpoints;
+vector<pi> balls;
 
-bool sizesort(int a, int b)
+void clear(void)
 {
-    if (l[a] == l[b])
-        return r[a] - l[a] < r[b] - l[b];
-
-    return l[a] < l[b];
-}
-
-bool place(int a)
-{
-    auto it = avail.lower_bound(l[a]);
-    if (it == avail.end()) {
-        return false;
+    while (!rightpoints.empty()) {
+        rightpoints.pop();
     }
-    int p = *it;
-    if (p > r[a]) {
-        return false;
-    }
-
-    avail.erase(p);
-    placed.insert(p);
-    if (placed.find(p + 1) == placed.end())
-        avail.insert(p + 1);
-
-    return true;
+    leftpoints.clear();
 }
 
 void solve(void)
 {
     scanf("%d", &N);
 
-    l.resize(N);
-    r.resize(N);
+    clear();
     balls.resize(N);
-    avail.clear();
-    placed.clear();
 
     for (int i = 0; i < N; i++) {
-        scanf("%d %d", &l[i], &r[i]);
-        balls[i] = i;
-        avail.insert(l[i]);
+        int l, r;
+        scanf("%d %d", &l, &r);
+        balls[i] = mp(l, r);
     }
 
+    sort(balls.begin(), balls.end());
     for (int i = 0; i < N; i++) {
-        if (!place(balls[i])) {
-            printf("No\n");
-            return;
+        if (leftpoints.empty() || leftpoints.back().x != balls[i].first) {
+            leftpoints.push_back({balls[i].first, {balls[i].second}});
+        }
+        else {
+            leftpoints.back().right.push_back(balls[i].second);
+        }
+    }
+    leftpoints.push_back({INT_MAX, {}});
+
+    for (int l = 0; l < leftpoints.size() - 1; l++) {
+        for (auto r : leftpoints[l].right)
+            rightpoints.push(r);
+
+        int pos = leftpoints[l].x;
+        while (!rightpoints.empty() && pos < leftpoints[l + 1].x) {
+            if (pos > rightpoints.top()) {
+                printf("No\n");
+                return;
+            }
+
+            rightpoints.pop();
+            pos++;
         }
     }
 
