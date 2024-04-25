@@ -2,41 +2,63 @@
 
 using namespace std;
 
-const int INF = 1e9 + 1;
-
-typedef pair<int, int> pi;
-
 struct Doll {
-    int diameter;
-    int height;
+    int r, h;
+
+    void read(void) {
+        scanf("%d %d", &r, &h);
+    }
 };
+struct Query {
+    int minR;
+    int maxH;
+    int id;
+
+    void read(int i) {
+        id = i;
+        scanf("%d %d", &minR, &maxH);
+    }
+};
+
+// A doll does NOT fit into another iff
+// h_i < h_j AND r_i >= r_j
 bool operator < (const Doll& a, const Doll& b)
 {
-    if (a.height == b.height)
-        return a.diameter > b.diameter;
-    return a.height < b.height;
+    if (a.h == b.h) {
+        return a.r > b.r;
+    }
+    return a.h < b.h;
+}
+bool operator < (const Query& a, const Query& b)
+{
+    return a.maxH < b.maxH;
 }
 
 int N, Q;
 vector<Doll> dolls;
-vector<pair<pi, int>> queries;
-// dp[i]: Maximum diameter of matryoshka doll at each time step
-vector<int> dp;
+vector<Query> queries;
 vector<int> ans;
 
-bool gcomp(const int& a, const int& b)
+// dp[i]: The highest R in each passage such that it is the i-th term
+// in a nonincreasing subsequence
+vector<int> dp;
+
+// Returns the maximum position in the dp array such that dp[i] >= r
+int calculate_position(int rad)
 {
-    return a > b;
-}
+    int l = 0; //dp[l] >= r
+    int r = N + 1; // dp[r] < r
+    while (l + 1 < r) {
+        int mid = (l + r) / 2;
+        if (dp[mid] >= rad) {
+            l = mid;
+        }
+        else {
+            r = mid;
+        }
+    }
 
-void process_query(int v)
-{
-    // Only take dolls with diameter as required
-    int res = upper_bound(dp.begin(), dp.end(), queries[v].first.first, gcomp) - dp.begin();
-
-    // All dolls at position res and above have diameter smaller than required queries[cur_]
-
-    ans[queries[v].second] = res - 1;
+    return l;
 }
 
 int main(void)
@@ -46,43 +68,38 @@ int main(void)
     dolls.resize(N);
     queries.resize(Q);
     ans.resize(Q);
-    dp.resize(N + 1, 0);
+
     for (int i = 0; i < N; i++) {
-        scanf("%d %d", &dolls[i].diameter, &dolls[i].height);
+        dolls[i].read();
     }
     for (int i = 0; i < Q; i++) {
-        scanf("%d %d", &queries[i].first.first, &queries[i].first.second);
-        queries[i].second = i;
+        queries[i].read(i);
     }
 
     sort(dolls.begin(), dolls.end());
-    sort(queries.begin(), queries.end(), [] (pair<pi, int> a, pair<pi, int> b) {return a.first.second < b.first.second;});
+    sort(queries.begin(), queries.end());
 
-    int reached = 0;
-    dp[0] = INF;
-    int cur_query = 0;
+    dp.assign(N + 1, -1);
+    dp[0] = INT_MAX;
+
+    int q_p = 0;
     for (int i = 0; i < N; i++) {
-        while (cur_query < Q && queries[cur_query].first.second < dolls[i].height) {
-            process_query(cur_query);
-            cur_query++;
+        while (q_p < Q && queries[q_p].maxH < dolls[i].h) {
+            ans[queries[q_p].id] = calculate_position(queries[q_p].minR);
+            q_p++;
         }
 
-
-        /* A pair of dolls (i, j) after sorting do NOT fit inside one another iff
-         * i < j => diameter(i) >= diameter(j)
-         */
-
-        int pos = upper_bound(dp.begin(), dp.end(), dolls[i].diameter, gcomp) - dp.begin();
-        dp[pos] = dolls[i].diameter;
-        reached = max(reached, pos);
+        int res = calculate_position(dolls[i].r);
+        dp[res + 1] = dolls[i].r;
     }
-    while (cur_query < Q) {
-        process_query(cur_query);
-        cur_query++;
+    while (q_p < Q) {
+        ans[queries[q_p].id] = calculate_position(queries[q_p].minR);
+        q_p++;
     }
 
-    for (int i = 0; i < Q; i++)
+    for (int i = 0; i < Q; i++) {
         printf("%d\n", ans[i]);
+    }
 
     return 0;
 }
