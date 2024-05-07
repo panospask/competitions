@@ -55,6 +55,12 @@ int dfs(int node, int p)
     par[node] = p;
 
     for (auto neigh : adj_list[node]) {
+        if (found) {
+            // IMPORTANT: Check if the previous edge resulted in a cycle find.
+            // If so, break.
+            break;
+        }
+
         if (neigh == par[node]) {
             continue;
         }
@@ -97,9 +103,7 @@ int dfs(int node, int p)
 
             if (par[neigh] == node && rem) {
                 int res = locate_cycle(neigh, node);
-                if (res) {
-                    rem--;
-                }
+                rem -= res;
             }
             else if (neigh != par[node] && dep[neigh] < dep[node]) {
                 tops.pb(neigh);
@@ -131,7 +135,7 @@ void solve(void)
     adj_list.assign(N, vector<int>());
     cnt.assign(N, 0);
     par.resize(N);
-    dep.resize(N);
+    dep.assign(N, -1);
     visited.assign(N, false);
     found = false, rv = false;
 
