@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#define MOD(var) ((var) = ((var) % MOD + MOD) % MOD)
 
 using namespace std;
 
@@ -7,88 +8,37 @@ typedef long long ll;
 const int MOD = 998244353;
 
 int N, K;
-ll ans;
-vector<ll> fact, inv;
 
-ll calc_power(ll b, ll p)
-{
-    ll x = 1;
-    b %= MOD;
-
-    while (p > 0) {
-        if (p % 2)
-            x = x * b % MOD;
-
-        b = b * b % MOD;
-        p /= 2;
-    }
-
-    return x;
-}
-
-ll find_inv(ll a)
-{
-    return calc_power(a, MOD - 2);
-}
-
-void precalculate_factorials(void)
-{
-    fact[0] = 1;
-    for (int i = 1; i <= N; i++)
-        fact[i] = fact[i-1] * i % MOD;
-
-    inv[N] = find_inv(fact[N]);
-    for (int i = N - 1; i >= 0; i--) {
-        inv[i] = inv[i + 1] * (i + 1) % MOD;
-    }
-}
-
-ll choose(int a, int b)
-{
-    ll nom = fact[a];
-    ll den = inv[b] * inv[a - b] % MOD;
-
-    return nom * den % MOD;
-}
-
-ll recurse(int i, int rem)
-{
-    if (rem < 0) {
-        return 0;
-    }
-    if (i == N) {
-        return 1;
-    }
-
-    ll res = 0;
-    for (int j = i + 1; j <= N; i++) {
-        if (j - i == 2 && i != 0 && j != N) {
-            continue;
-        }
-        res += recurse(j, rem - 1);
-        res %= MOD;
-    }
-
-    return
-}
+// dp[i][j]: Number of ways to split the first i elements into j blocks (or more than j if j == K)
+// Blocks of length 2 are only allowed when i == 2 or i == N
+vector<vector<ll>> dp;
+vector<vector<ll>> pref;
 
 int main(void)
 {
     scanf("%d %d", &N, &K);
 
-    fact.resize(N + 1);
-    inv.resize(N + 1);
+    dp.assign(N + 1, vector<ll>(K + 1, 0));
+    pref.assign(N + 1, vector<ll>(K + 1, 0));
 
-    precalculate_factorials();
+    dp[0][0] = 1;
+    pref[0][0] = dp[0][0];
 
-    ans = 1;
-    for (int i = 0; i < N - 1; i++) {
-        ans = ans * 2 % MOD;
+    for (int i = 1; i <= N; i++) {
+        for (int j = 0; j <= K; j++) {
+            dp[i][min(j + 1, K)] += pref[i - 1][j];
+            if (i > 2 && i != N) {
+                dp[i][min(j + 1, K)] -= dp[i - 2][j];
+            }
+            MOD(dp[i][min(j + 1, K)]);
+        }
+
+        for (int j = 0; j <= K; j++) {
+            pref[i][j] = pref[i - 1][j] + dp[i][j];
+        }
     }
 
-    ans -= recurse(0, K);
-    ans = (ans % MOD + MOD) % MOD;
-    printf("%lld\n", ans);
+    printf("%lld\n", dp[N][K]);
 
     return 0;
 }
