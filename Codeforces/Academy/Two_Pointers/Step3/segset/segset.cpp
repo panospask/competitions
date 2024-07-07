@@ -4,6 +4,8 @@ using namespace std;
 
 const int MAXV = 1001;
 
+// Try two stacks method
+
 struct ImprovedStack {
     stack<int> s;
     stack<bitset<MAXV>> possible;
