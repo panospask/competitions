@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
     scanf("%d %d", &N, &T);
 
     // You may perform any extra initialization here.
+    srand(1);
 
     for (int i = 0; i < T; i++) {
         int answer = find_correctly_delivered_letter();

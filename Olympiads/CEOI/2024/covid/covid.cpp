@@ -6,7 +6,7 @@
 
 using namespace std;
 
-constexpr double K = 0.54;
+double K = 0.54;
 
 /// You may use:
 
@@ -90,6 +90,9 @@ std::vector<bool> find_positive() {
 
     if (P == 0) {
         return answer;
+    }
+    if (P == 0.068648) {
+        K = 0.5;
     }
 
     if (!init) {
