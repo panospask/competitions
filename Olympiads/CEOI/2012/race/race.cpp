@@ -1,5 +1,7 @@
     /*This problem needs arrays instad of vectors due to
     extremely tight ML and TL*/
+    /*I think this solution is O(N^4), there probably exists an optimization
+    to make it O(N^3)*/
 
     #include <bits/stdc++.h>
     #define pb push_back
@@ -13,8 +15,7 @@
     int N, K;
     bool stage[MAXN][MAXN];
 
-    vector<vector<int>> adj_list;
-
+    vector<int> adj_list[MAXN];
     // dp[l][r][k]:  Maximum number of stages if enclosed by l, r
     // and being in the stages such that l < s < r'
     // Where r' = l > r ? r = r + N : r
@@ -31,8 +32,6 @@
     int main(void)
     {
         scanf("%d %d", &N, &K);
-
-        adj_list.resize(N);
 
         for (int i = 0; i < N; i++) {
             int v;
