@@ -1,53 +1,70 @@
 #include <bits/stdc++.h>
-#define pb push_back
-#define mp make_pair
-#define MAXN 10000
-#define MAXP 2000
 
 using namespace std;
 
-typedef long long int ll;
+typedef long long ll;
 
-int n, m;
-// dp[p][i]: Permutations of length i using the first p primes
-long long int dp[MAXP + 2][MAXN + 2];
-bool iscomposite[MAXN + 5];
+int N, M;
 vector<int> primes;
+vector<bool> isprime;
+
+/* dp[j][i]: Sum of all the numbers K such that the sum of their prime
+ * decomposition is i (using only the first j primes)
+ */
+vector<vector<ll>> dp;
 
 int main(void)
 {
     freopen("exercise.in", "r", stdin);
     freopen("exercise.out", "w", stdout);
 
-    scanf("%d %d", &n, &m);
-    for (int i = 2; i <= n; i++) 
-        if (!iscomposite[i]) {
+    scanf("%d %d", &N, &M);
+
+    isprime.assign(N + 1, true);
+
+    for (int i = 2; i <= N; i++) {
+        if (isprime[i]) {
             primes.push_back(i);
-            for (int j = 2 * i; j <= n; j+= i)
-                iscomposite[j] = true;
         }
-    if (primes.size() == 0) {
-        printf("%d\n", 1);
-        return 0;
-    }
 
-    for (int j = 0; j <= n; j++)
-        dp[0][j] = 1;
+        for (auto p : primes) {
+            if (p * i > N) {
+                break;
+            }
+            isprime[p * i] = false;
 
-    for (int i = 1; i <= primes.size(); i++) {
-        for (int j = 0; j <= n; j++) {
-            dp[i][j] = dp[i-1][j];
-
-            long long int curprime_power = primes[i-1];
-            while (curprime_power <= j) {
-                long long int to_add = curprime_power * dp[i-1][j - curprime_power] % m;
-                dp[i][j] = (dp[i][j] + to_add) % m;
-
-                curprime_power *= primes[i-1];
+            if (i % p == 0) {
+                break;
             }
         }
     }
 
-    printf("%lld\n", dp[primes.size()][n]);
+    dp.assign(primes.size() + 1, vector<ll>(N + 1, 0));
+
+    dp[0][0] = 1;
+    for (int j = 0; j < primes.size(); j++) {
+        int primepow = primes[j];
+        while (primepow <= N) {
+            for (int s = N - primepow; s >= 0; s--) {
+                dp[j + 1][s + primepow] += dp[j][s] * primepow % M;
+                dp[j + 1][s + primepow] %= M;
+            }
+
+            primepow *= primes[j];
+        }
+
+        for (int s = 0; s <= N; s++) {
+            dp[j + 1][s] += dp[j][s];
+            dp[j + 1][s] %= M;
+        }
+    }
+
+    ll ans = 0;
+    for (int i = 0; i <= N; i++) {
+        ans += dp[primes.size()][i];
+        ans %= M;
+    }
+
+    printf("%lld\n", ans);
     return 0;
 }
