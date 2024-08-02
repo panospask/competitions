@@ -1,103 +1,93 @@
+/* Sort explaination because I was stuck on this problem two times in two different summers
+ * The beetle must drink from 0 to N drops, assume the beetle drinks i drops and calculate the optimal
+ * way to do so.
+ */
+
 #include <bits/stdc++.h>
-#define MAXN 300
-#define mp make_pair
+#define pb push_back
 
 using namespace std;
 
-struct sit {
-    long long int value;
-    int day;
+typedef long long ll;
 
-    sit(void) {
-        value = 0;
-        day = 1e9;
-    }
-    sit(long long v, int d) {
-        value = v;
-        day = d;
-    }
-};
-typedef struct sit Sit;
+const ll INF = 1e18;
 
-bool operator < (Sit a, Sit b)
+int N, M;
+vector<int> lx;
+vector<int> rx;
+
+// dp[l][r][k]: The minimum value lost while drink all drops from lx[l] to rx[r]
+// k == 0: The beetle is at lx[l]
+// k == 1: The beetle is at rx[r]
+vector<vector<vector<ll>>> dp;
+
+ll test_drops(int drops)
 {
-    if (a.value == b.value)
-        return a.day > b.day;
+    ll res = INF;
 
-    return a.value < b.value;
+    dp.assign(lx.size(), vector<vector<ll>>(rx.size(), vector<ll>(2, INF)));
+
+    dp[0][0][0] = dp[0][0][1] = 0;
+    for (int l = 0; l < lx.size(); l++) {
+        for (int r = 0; r < rx.size(); r++) {
+            for (int k = 0; k < 2; k++) {
+                int len = r + l;
+                if (len > drops) {
+                    continue;
+                }
+                else if (len == drops) {
+                    res = min(res, dp[l][r][k]);
+                }
+
+                int position = k == 0 ? lx[l] : rx[r];
+
+                // All the remaing drops will lose value during the next move
+                int remaining = drops - len;
+
+                // Either move one to the left or one to the right
+                if (l + 1 < lx.size()) {
+                    int dist = abs(position - lx[l + 1]);
+                    dp[l + 1][r][0] = min(dp[l + 1][r][0], dp[l][r][k] + (ll)dist * remaining);
+                }
+                if (r + 1 < rx.size()) {
+                    int dist = abs(position - rx[r + 1]);
+                    dp[l][r + 1][1] = min(dp[l][r + 1][1], dp[l][r][k] + (ll)dist * remaining);
+                }
+            }
+        }
+    }
+
+    return res;
 }
-
-Sit operator + (Sit a, Sit b)
-{
-    return Sit(a.value + b.value, a.day + b.day);
-}
-
-//dp[l][r][k]: The maximum amount of water the beetle can lose from l to r and what direction it is in
-long long dp[MAXN + 2][MAXN + 2][2];
-int x[MAXN + 2];
-vector<int> l_x;
-vector<int> r_x;
-int n, m;
 
 int main(void)
 {
-    scanf("%d %d", &n, &m);
-    l_x.push_back(0);
-    r_x.push_back(0);
-    for (int i = 1; i <= n; i++) {
-        scanf("%d", &x[i]);
-        if (x[i] < 0)
-            l_x.push_back(x[i]);
-        else    
-            r_x.push_back(x[i]);
+    scanf("%d %d", &N, &M);
+
+    lx.pb(0);
+    rx.pb(0);
+
+    for (int i = 0; i < N; i++) {
+        int x;
+        scanf("%d", &x);
+
+        if (x < 0) {
+            lx.pb(x);
+        }
+        else {
+            rx.pb(x);
+        }
     }
 
-    sort(l_x.begin(), l_x.end());
-    reverse(l_x.begin(), l_x.end());
-    sort(r_x.begin(), r_x.end());
+    sort(lx.rbegin(), lx.rend());
+    sort(rx.begin(), rx.end());
 
-    long long ans = 0;
-
-    dp[0][0][0] = dp[0][0][1] = 0;
-    for (int len = 0; len <= n; len++) {
-        for (int l = 0; l < l_x.size(); l++)
-            for (int r = 0; r < r_x.size(); r++)
-                dp[l][r][0] = dp[l][r][1] = LONG_LONG_MIN;
-
-        dp[0][0][0] = dp[0][0][1] = 0;
-        for (int l = 0; l < l_x.size(); l++)
-            for (int r = 0; r < r_x.size(); r++) {
-                if (l + r == len) {
-                    ans = max(ans, max(dp[l][r][0], dp[l][r][1]));
-                }
-                else if (l + r > len) {
-                    continue;
-                }
-                // Times we will use the current distance
-                int times_used = (len - l - r);
-
-                // Move to a new left drop
-                if (l < l_x.size() - 1) {
-                    if (dp[l][r][0] != LONG_LONG_MIN) {
-                        dp[l+1][r][0] = max(dp[l+1][r][0], m + dp[l][r][0] - times_used * abs(l_x[l] - l_x[l+1]));
-                    }
-                    if (dp[l][r][1] != LONG_LONG_MIN) {
-                        dp[l+1][r][0] = max(dp[l+1][r][0], m + dp[l][r][1] - times_used * abs(l_x[l+1] - r_x[r]));
-                    }
-                }
-
-                // Move to a new right drop
-                if (r < r_x.size() - 1) {
-                    if (dp[l][r][0] != LONG_LONG_MIN) {
-                        dp[l][r+1][1] = max(dp[l][r+1][1], m + dp[l][r][0] - times_used * abs(l_x[l] - r_x[r+1]));
-                    }
-                    if (dp[l][r][1] != LONG_LONG_MIN) {
-                        dp[l][r+1][1] = max(dp[l][r+1][1], m + dp[l][r][1] - times_used * abs(r_x[r+1] - r_x[r]));
-                    }
-                }
-            }
+    ll ans = 0;
+    for (int drops = 0; drops <= N; drops++) {
+        ans = max(ans, (ll)drops * M - test_drops(drops));
     }
 
     printf("%lld\n", ans);
+
     return 0;
 }
