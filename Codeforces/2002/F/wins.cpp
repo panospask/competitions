@@ -5,7 +5,7 @@ using namespace std;
 
 typedef long long ll;
 
-const int MAXN = 2e7 + 10;
+const int MAXN = 2e7 + 5;
 
 int N, M, l, f;
 vector<int> primes;
@@ -30,23 +30,45 @@ void solve(void)
     }
 
     int p1 = prev_prime[N];
-    int p2 = p1 - 1;
+    int p2 = prev_prime[p1 - 1];
+
+    if (N <= 10) {
+        p1 = 1;
+        p2 = 1;
+    }
+
+    vector<vector<bool>> dp(N - p1 + 1, vector<bool>(N - p2 + 1));
 
     ll ans = 0;
-    while (p1 <= N) {
-        ans = max(ans, (ll)l * p1 + f * p2);
 
-        p1++;
-        while (gcd(p1, p2) > 1) {
-            p2--;
+    dp[0][0] = true;
+    for (int i = 0; i <= N - p1; i++) {
+        for (int j = 0; j <= N - p2; j++) {
+            if (!dp[i][j]) {
+                continue;
+            }
+
+            int v1 = p1 + i;
+            int v2 = p2 + j;
+
+            ans = max(ans, (ll)v1 * l + (ll)v2 * f);
+
+            if (v1 != N) {
+                if (gcd(v1 + 1, v2) == 1) {
+                    dp[i + 1][j] = true;
+                }
+            }
+            if (v2 != N) {
+                if (gcd(v1, v2 + 1) == 1) {
+                    dp[i][j + 1] = true;
+                }
+            }
         }
-        while (gcd(p1, p2) <= 1) {
-            p2++;
-        }
-        p2--;
     }
 
     printf("%lld\n", ans);
+
+    return;
 }
 
 void sieve(void)
