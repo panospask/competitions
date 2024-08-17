@@ -9,10 +9,14 @@ using namespace std;
 typedef pair<int, int> pi;
 
 const int INF = 1e6 + 1;
+const int MAXV = 1e6;
 
 int N;
 vector<vector<int>> d;
+vector<int> at;
 int s1, s2;
+
+int westmost, eastmost;
 
 void calculate_distance(int s)
 {
@@ -39,14 +43,9 @@ int closer(int i)
     return id;
 }
 
-bool east_sort(const int& a, const int& b)
+bool distancesort(const int& a, const int& b)
 {
-    return d[0][a] < d[0][b];
-}
-
-bool west_sort(const int& a, const int& b)
-{
-    return d[s1][a] < d[s1][b];
+    return d[a] < d[b];
 }
 
 int calculate(int i, int j)
@@ -54,102 +53,158 @@ int calculate(int i, int j)
     if (d[i][j] == INF) {
         d[i][j] = d[j][i] = getDistance(i, j);
     }
-
+ 
     return d[i][j];
+}
+
+bool inside(int l)
+{
+    return l >= 0 && l <= MAXV;
+}
+
+bool WestType2(int u, int location[])
+{
+    int loc = location[westmost] + d[westmost][u];
+    if (!inside(loc) || loc >= location[0]) {
+        return false;
+    }
+
+    int switchdist = d[u][eastmost] - (location[eastmost] - loc);
+    if (switchdist % 2) {
+        return false;
+    }
+    switchdist /= 2;
+
+    int switch_pos = loc - switchdist;
+    if (switch_pos >= 0 && switch_pos <= MAXV && at[switch_pos] == 1) {
+        return true;
+    }
+
+    return false;
+}
+
+bool EastType1(int u, int location[])
+{
+    int loc = location[eastmost] - d[u][eastmost];
+    if (!inside(loc) || loc <= location[s1]) {
+        return false;
+    }
+
+    int switchdist = d[u][westmost] - (loc - location[westmost]);
+    if (switchdist % 2) {
+        return false;
+    }
+    switchdist /= 2;
+
+    int switch_pos = loc + switchdist;
+    if (switch_pos <= MAXV && at[switch_pos] == 2) {
+        return true;
+    }
+
+    return false;
+}
+
+bool Between(int u, int location[])
+{
+    if (westmost != 0) {
+        return false;
+    }
+
+    int loc = location[s1] - (d[0][u] - d[0][s1]);
+    if (loc <= location[0] || loc >= location[s1]) {
+        return false;
+    }
+
+    if (d[eastmost][u] == location[eastmost] - loc && d[westmost][u] == d[0][u] + location[0] - location[westmost]) {
+        return true;
+    }
+    return false;
+}
+
+bool WestType1(int u, int location[]) 
+{
+    int loc = location[eastmost] - d[u][eastmost];
+    if (!inside(loc)) {
+        return false;
+    }
+
+    if (d[u][0] == location[s1] - loc + d[0][s1]) {
+        return true;
+    }
+    return false;
 }
 
 void findLocation(int n, int first, int location[], int stype[])
 {
     N = n;
     d.assign(N, vector<int>(N, INF));
+    at.assign(MAXV + 1, 0);
 
     location[0] = first;
     stype[0] = 1;
+    at[location[0]] = 1;
 
     calculate_distance(0);
     s1 = closer(0);
-    int d1 = d[0][s1];
-
-    location[s1] = first + d1;
+    location[s1] = first + d[s1][0];
     stype[s1] = 2;
+    at[location[s1]] = 2;
 
-    calculate_distance(s1);
-    s2 = closer(s1);
-    int d2 = d[s1][s2];
-
-    location[s2] = location[s1] - d2;
-    stype[s2] = 1;
-
-    int p1 = location[s1] - location[0];
-    int p2 = 2 * (location[s1] - location[s2]);
-
-    vector<int> east;
-    vector<int> west;
+    vector<int> trav;
 
     for (int i = 0; i < N; i++) {
-        if (i == s1 || i == s2 || i == 0) {
-            continue;
-        }
-        if (d[0][i] + p2 == d[s1][i] + p1) {
-            east.pb(i);
-        }
-        else {
-            west.pb(i);
-        }
-    }  
-
-    sort(east.begin(), east.end(), east_sort);
-    int eastmost = s1;
-    int opt = s2;
-    for (int i = 0; i < east.size(); i++) {
-        p1 = location[eastmost] - location[0];
-        p2 = 2 * (location[eastmost] - location[opt]);
-
-        int u = east[i];
-
-        calculate(u, eastmost);
-
-        if (d[0][u] + p2 <= d[eastmost][u] + p1) {
-            // u is the new eastmost
-            location[u] = location[0] + d[0][u];
-            stype[u] = 2;
-
-            eastmost = u;
-        }
-        else {
-            // u is not more east than the current maximum
-            location[u] = location[eastmost] - d[eastmost][u];
-            stype[u] = 1;
-
-            if (location[u] > location[opt]) {
-                opt = u;
-            }
+        if (i != 0 && i != s1) {
+            trav.pb(i);
         }
     }
 
-    sort(west.begin(), west.end());
-    int westmost = s2;
-    opt = s1;
-    for (int i = 0; i < west.size(); i++) {
-        p1 = location[s1] - location[westmost];
-        p2 = 2 * (location[opt] - location[westmost]);
-        
-        int u = west[i];
-        calculate(u, westmost);
+    sort(trav.begin(), trav.end(), distancesort);
 
-        if (d[s1][u] + p2 <= d[westmost][u] + p1) {
-            // u is the new westmost
-            location[u] = location[s1] - d[s1][u];
+    westmost = 0;
+    eastmost = s1;
+    for (int i = 0; i < trav.size(); i++) {
+        int u = trav[i];
+
+        calculate(u, eastmost);
+        calculate(u, westmost);
+        calculate(u, 0);
+
+        int loc;
+        int switched;
+
+        if (Between(u, location)) {
+            location[u] = location[s1] - (d[0][u] - d[0][s1]);
             stype[u] = 1;
 
-            westmost = u;
+            at[location[u]] = 1;
         }
-        else {
+        else if (WestType2(u, location)) {
             location[u] = location[westmost] + d[westmost][u];
             stype[u] = 2;
 
-            if (location[u] < location[opt]) {
-                opt = u;
+            at[location[u]] = 2;
+        }
+        else if (EastType1(u, location)) {
+            location[u] = location[eastmost] - d[eastmost][u];
+            stype[u] = 1;
+
+            at[location[u]] = 1;
+        }
+        else {
+            // Either new westmost or new eastmost
+            if (!WestType1(u, location)) {
+                location[u] = location[westmost] + d[westmost][u];
+                stype[u] = 2;
+
+                at[location[u]] = 2;
+                eastmost = u;
+            }
+            else {
+                location[u] = location[eastmost] - d[eastmost][u];
+                stype[u] = 1;
+
+                at[location[u]] = 1;
+                westmost = u;
             }
         }
     }
