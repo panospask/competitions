@@ -5,8 +5,6 @@ using namespace std;
 
 typedef long long ll;
 
-const ll INF = 2e18;
-
 struct SegTree {
     struct Node {
         ll sum = 0;
@@ -82,6 +80,7 @@ int N, D;
 SegTree st;
 vector<int> values;
 vector<int> a;
+vector<int> p;
 
 int pos(int v)
 {
@@ -99,7 +98,7 @@ void calculate(int s, int l, int r, int optl, int optr, int mod, vector<ll>& ans
     int maxp = optl;
     
     for (int i = optl; i <= optr; i++) {
-        st.add(pos(a[i]), a[i], 1);
+        st.add(p[i], a[i], 1);
 
         int rem = max(mid - (i - s) * mod, 0);
         ll cur = st.getsum(rem);
@@ -113,7 +112,7 @@ void calculate(int s, int l, int r, int optl, int optr, int mod, vector<ll>& ans
     ans[mid] = maxv;
 
     for (int i = optl; i <= optr; i++) {
-        st.add(pos(a[i]), -a[i], -1);
+        st.add(p[i], -a[i], -1);
     }
 
     if (mid == l) {
@@ -123,11 +122,11 @@ void calculate(int s, int l, int r, int optl, int optr, int mod, vector<ll>& ans
     calculate(s, l, mid, optl, maxp, mod, ans);
 
     for (int i = optl; i < maxp; i++) {
-        st.add(pos(a[i]), a[i], 1);
+        st.add(p[i], a[i], 1);
     }
     calculate(s, mid, r, maxp, optr, mod, ans);
     for (int i = optl; i < maxp; i++) {
-        st.add(pos(a[i]), -a[i], -1);
+        st.add(p[i], -a[i], -1);
     }
 }
 
@@ -138,6 +137,7 @@ long long int findMaxAttraction(int n, int start, int d, int attraction[])
 
     values.resize(N);
     a.resize(N);
+    p.resize(N);
 
     for (int i = 0; i < N; i++) {
         values[i] = attraction[i];
@@ -145,6 +145,9 @@ long long int findMaxAttraction(int n, int start, int d, int attraction[])
     }
     sort(values.begin(), values.end());
     values.resize(unique(values.begin(), values.end()) - values.begin());
+    for (int i = 0; i < N; i++) {
+        p[i] = pos(a[i]);
+    }
 
     st.init(values.size());
 
@@ -153,6 +156,7 @@ long long int findMaxAttraction(int n, int start, int d, int attraction[])
     calculate(start, 0, D + 1, start + 1, N - 1, 2, aft2);
 
     reverse(a.begin(), a.end());
+    reverse(p.begin(), p.end());
     start = N - start - 1;
     vector<ll> bef1(D + 1), bef2(D + 1);
     calculate(start, 0, D + 1, start + 1, N - 1, 1, bef1);
