@@ -133,7 +133,6 @@ void calculate(int s, int l, int r, int optl, int optr, int mod, vector<ll>& ans
 
 long long int findMaxAttraction(int n, int start, int d, int attraction[])
 {
-    // Hope this works
     N = n;
     D = d;
 
