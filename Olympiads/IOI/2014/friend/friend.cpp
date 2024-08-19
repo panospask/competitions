@@ -1,90 +1,56 @@
 #include <bits/stdc++.h>
 #include "friend.h"
 #define pb push_back
-#define CHECK_BIT(var, pos) ((var) & (1 << (pos)))
 
 using namespace std;
 
 typedef long long ll;
 
 int N;
-vector<int> conf, h, prot;
+vector<int> a;
+vector<int> op;
 vector<vector<int>> kids;
-vector<vector<int>> friends;
-vector<int> par;
 
+/* dp[i][able]:
+ * Maximum total confidence in the subtree of i
+ * 
+ * taken is a boolean variable denoting if we have taken a node that 
+ * has connections to the remaining friends of i
+ */
 vector<vector<int>> dp;
-
-void make_friend(int i, int j)
-{
-    friends[i].pb(j);
-    friends[j].pb(i);
-}
-
-int brute_force(void)
-{
-    friends.resize(N);
-
-    for (int i = 1; i < N; i++) {
-        int p = h[i];
-        if (prot[i] == 0) {
-            make_friend(i, p);
-        }
-        else if (prot[i] == 1) {
-            for (auto v : friends[p]) {
-                make_friend(i, v);
-            }
-        }
-        else {
-            for (auto v : friends[p]) {
-                make_friend(i, v);
-            }
-            make_friend(i, p);
-        }
-    }
-
-    int ans = 0, sum = 0;
-    vector<int> cur;
-    set<int> banned;
-    for (int mask = 0; mask < (1 << N); mask++) {
-        sum = 0;
-        cur.clear();
-        banned.clear();
-
-        bool invalid = false;
-        for (int i = 0; i < N && !invalid; i++) {
-            if (CHECK_BIT(mask, i)) {
-                sum += conf[i];
-                if (banned.count(i)) {
-                    invalid = true;
-                    break;
-                }
-                else {
-                    for (auto v : friends[i]) {
-                        banned.insert(v);
-                    }
-                }
-            }
-        }
-
-        if (!invalid) {
-            ans = max(ans, sum);
-        }
-    }
-
-    return ans;
-}
 
 void dfs(int node)
 {
-    dp[node][0] = 0;
-    dp[node][1] = conf[node];
+    dp[node][true] = a[node];
+    dp[node][false] = 0;
 
     for (auto kid : kids[node]) {
         dfs(kid);
 
-        dp[node][0] += max(dp[kid][1], dp[kid][0]);
-        dp[node][1] += dp[kid][0];
+        if (op[kid] == 0) {
+            // This kid has connection only to outside of its subtree
+
+            dp[node][false] = dp[node][false] + max(dp[kid][false], dp[kid][true]);
+
+            dp[node][true] = dp[node][true] + dp[kid][false];
+        }
+        else if (op[kid] == 1) {
+            // This kid has connections to all friends of node that will be processed after it
+
+            // We can take both the kid and the node as they don't have a connection
+            // However we would need to eliminate all further connections to node by taking either
+
+            dp[node][true] = max(dp[node][true] + max(dp[kid][false], dp[kid][true]), max(dp[node][false], dp[node][true]) + dp[kid][true]);
+            dp[node][false] = dp[node][false] + dp[kid][false];
+        }
+        else {
+            // This kid has both of the above types of edges
+
+            // Taking either node or kid eliminates furher connections and we cannot take both
+
+            dp[node][true] = max(dp[node][true] + dp[kid][false], dp[node][false] + dp[kid][true]);
+            dp[node][false] = dp[node][false] + dp[kid][false];
+        }
     }
 }
 
@@ -92,50 +58,23 @@ int findSample(int n,int confidence[],int host[],int protocol[])
 {
     N = n;
 
-    conf.resize(N);
-    prot.resize(N);
-    h.resize(N);
-
-    bool c0 = true, c1 = true, c2 = true;
-    conf[0] = confidence[0];
-    for (int i = 1; i < N; i++) {
-        conf[i] = confidence[i];
-        prot[i] = protocol[i];
-        h[i] = host[i];
-
-        c0 = c0 && protocol[i] == 0;
-        c1 = c1 && protocol[i] == 1;
-        c2 = c2 && protocol[i] == 2;
-    }
-
-    if (N <= 10) {
-        return brute_force();
-    }
-
-    if (c2) {
-        sort(conf.begin(), conf.end());
-        return conf.back();
-    }
-
+    a.resize(N);
+    op.resize(N);   
     kids.resize(N);
+    dp.resize(N, vector<int>(2, 0));
 
+    a[0] = confidence[0];
     for (int i = 1; i < N; i++) {
-        kids[h[i]].pb(i);
+        kids[host[i]].pb(i);
+        op[i]= protocol[i];
+        a[i] = confidence[i];
     }
 
-    if (c1) {
-        int sum = 0;
-        for (int i = 0; i < N; i++) {
-            sum += confidence[i];
-        }
-
-        return sum;
-    }
-    if (c0) {
-        dp.resize(N, vector<int>(2));
-        dfs(0);
-        return max(dp[0][0], dp[0][1]);
+    for (int i = 0; i < N; i++) {
+        reverse(kids[i].begin(), kids[i].end());
     }
 
-    return 0;
+    dfs(0);
+    
+    return max(dp[0][0], dp[0][1]);
 }

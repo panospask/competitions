@@ -7,135 +7,174 @@ typedef long long ll;
 
 const ll INF = 2e18;
 
-vector<ll> dp1;
-vector<ll> dp2;
+struct SegTree {
+    struct Node {
+        ll sum = 0;
+        int cnt = 0;
+    };
 
-void makemax(ll& a, ll b)
+    Node merge(Node a, Node b) {
+        return {a.sum + b.sum, a.cnt + b.cnt};
+    }
+
+    int size;
+    vector<Node> tree;
+
+    void init(int N) {
+        size = 1;
+
+        while (size < N) {
+            size *= 2;
+        }
+
+        tree.assign(2 * size, {0, 0});
+    }
+
+    void add(int i, Node v, int x, int lx, int rx) {
+        if (lx == rx - 1) {
+            tree[x] = merge(tree[x], v);
+            return;
+        }
+
+        int mid = (lx + rx) / 2;
+        if (i < mid) {
+            add(i, v, 2 * x + 1, lx, mid);
+        }
+        else {
+            add(i, v, 2 * x + 2, mid, rx);
+        }
+
+        tree[x] = merge(tree[2 * x + 1], tree[2 * x + 2]);
+    }
+    void add(int i, int x, int c) {
+        add(i, {x, c}, 0, 0, size);
+    }
+
+    ll getsum(int k, int x, int lx, int rx) {
+        if (k >= tree[x].cnt) {
+            return tree[x].sum;
+        }
+        else if (tree[x].cnt == 0) {
+            return 0;
+        }
+        else if (lx == rx - 1) {
+            // Take **some** of these values
+            ll v = tree[x].sum / tree[x].cnt;
+
+            return v * k; 
+        }
+
+        ll res = 0;
+        int mid = (lx + rx) / 2;
+        res = getsum(k, 2 * x + 1, lx, mid);
+        if (tree[2 * x + 1].cnt < k) {
+            res += getsum(k - tree[2 * x + 1].cnt, 2 * x + 2, mid, rx);
+        }
+
+        return res;
+    }
+    ll getsum(int k) {
+        return getsum(k, 0, 0, size);
+    }
+};
+
+int N, D;
+SegTree st;
+vector<int> values;
+vector<int> a;
+
+int pos(int v)
 {
-    if (a < b) {
-        a = b;
+    return values.size() - 1 - (lower_bound(values.begin(), values.end(), v) - values.begin());
+}
+
+void calculate(int s, int l, int r, int optl, int optr, int mod, vector<ll>& ans)
+{
+    if (optl >= N) {
+        return;
+    }
+
+    int mid = (l + r) / 2;
+    ll maxv = 0;
+    int maxp = optl;
+    
+    for (int i = optl; i <= optr; i++) {
+        st.add(pos(a[i]), a[i], 1);
+
+        int rem = max(mid - (i - s) * mod, 0);
+        ll cur = st.getsum(rem);
+
+        if (cur > maxv) {
+            maxv = cur;
+            maxp = i;
+        }
+    }
+
+    ans[mid] = maxv;
+
+    for (int i = optl; i <= optr; i++) {
+        st.add(pos(a[i]), -a[i], -1);
+    }
+
+    if (mid == l) {
+        return;
+    }
+
+    calculate(s, l, mid, optl, maxp, mod, ans);
+
+    for (int i = optl; i < maxp; i++) {
+        st.add(pos(a[i]), a[i], 1);
+    }
+    calculate(s, mid, r, maxp, optr, mod, ans);
+    for (int i = optl; i < maxp; i++) {
+        st.add(pos(a[i]), -a[i], -1);
     }
 }
 
-long long int findMaxAttraction(int N, int start, int d, int attraction[])
+long long int findMaxAttraction(int n, int start, int d, int attraction[])
 {
-    if (start == 0) {
-        priority_queue<int, vector<int>, greater<int>> q;
+    // Hope this works
+    N = n;
+    D = d;
 
-        ll ans = 0;
-        ll sum = 0;
+    values.resize(N);
+    a.resize(N);
 
-        for (int i = 0; i < N && i <= d; i++) {
-            q.push(attraction[i]);
-            sum += attraction[i];
-
-            int rem = d - i;
-
-            while (q.size() > rem) {
-                sum -= q.top();
-                q.pop();
-            }
-
-            makemax(ans, sum);
-        }
-
-        return ans;
+    for (int i = 0; i < N; i++) {
+        values[i] = attraction[i];
+        a[i] = attraction[i];
     }
+    sort(values.begin(), values.end());
+    values.resize(unique(values.begin(), values.end()) - values.begin());
 
-    d++;
+    st.init(values.size());
 
-    vector<ll> pref1(d, -INF), suff1(d, -INF);
-    vector<ll> pref2(d, -INF), suff2(d, -INF);
+    vector<ll> aft1(D + 1), aft2(D + 1);
+    calculate(start, 0, D + 1, start + 1, N - 1, 1, aft1);
+    calculate(start, 0, D + 1, start + 1, N - 1, 2, aft2);
 
-    dp1.assign(d, 0);
-    for (int i = start + 1; i < N; i++) {
-        for (int k = d - 1; k >= 0; k--) {
-            dp1[k] = -INF;
-            if (k < 2 || dp1[k - 2] == -INF) {
-                continue;
-            }
-            makemax(dp1[k], dp1[k - 2]);
+    reverse(a.begin(), a.end());
+    start = N - start - 1;
+    vector<ll> bef1(D + 1), bef2(D + 1);
+    calculate(start, 0, D + 1, start + 1, N - 1, 1, bef1);
+    calculate(start, 0, D + 1, start + 1, N - 1, 2, bef2);
 
-            if (k >= 3 && dp1[k - 3] != -INF) {
-                makemax(dp1[k], dp1[k - 3] + attraction[i]);
-            }
-            makemax(pref1[k], dp1[k]);
-        }
-    }
+    ll ans = 0;
+    for (int p1 = 0; p1 <= D; p1++) {
+        int p2 = D - p1;
 
-    dp1.assign(d, 0);
-    for (int i = start - 1; i >= 0; i--) {
-        for (int k = d - 1; k >= 0; k--) {
-            dp1[k] = -INF;
-            if (k < 2 || dp1[k - 2] == -INF) {
-                continue;
-            }
-            makemax(dp1[k], dp1[k - 2]);
+        ans = max(ans, aft1[p1] + bef2[p2]);
+        ans = max(ans, bef1[p1] + aft2[p2]);
 
-            if (k >= 3 && dp1[k - 3] != -INF) {
-                makemax(dp1[k], dp1[k - 3] + attraction[i]);
-            }
-
-            makemax(suff1[k], dp1[k]);
-        }
-    }
-
-    dp2.assign(d, 0);
-    for (int i = start + 1; i < N; i++) {
-        for (int k = d - 1; k >= 0; k--) {
-            dp2[k] = -INF;
-            if (k < 1 || dp2[k - 1] == -INF) {
-                continue;
-            }
-            makemax(dp2[k], dp2[k - 1]);
-
-            if (k >= 2 && dp2[k - 2] != -INF) {
-                makemax(dp2[k], dp2[k - 2] + attraction[i]);
-            }
-
-            makemax(pref2[k], dp2[k]);
-        }
-    }
-
-    dp2.assign(d, 0);
-    for (int i = start - 1; i >= 0; i--) {
-        for (int k = d - 1; k >= 0; k--) {
-           dp2[k] = -INF;
-            if (k < 1 || dp2[k - 1] == -INF) {
-                continue;
-            }
-            makemax(dp2[k], dp2[k - 1]);
-
-            if (k >= 2 && dp2[k - 2] != -INF) {
-                makemax(dp2[k], dp2[k - 2] + attraction[i]);
-            }
-
-            makemax(suff2[k], dp2[k]);
-        }
-    }
-
-    suff1[0] = 0;
-    suff2[0] = 0;
-    pref1[0] = 0;
-    pref2[0] = 0;
-
-
-    d--;
-    ll res = 0;
-    for (int p1 = 0; p1 <= d; p1++) {
-        int p2 = d - p1;
-
-        makemax(res, suff1[p1] + pref2[p2]);
-        makemax(res, suff2[p1] + pref1[p2]);
         if (p1) {
-            makemax(res, suff1[p1 - 1] + attraction[start] + pref2[p2]);
-            makemax(res, suff2[p1 - 1] + attraction[start] + pref1[p2]);
+            ans = max(ans, aft1[p1 - 1] + a[start] + bef2[p2]);
+            ans = max(ans, bef1[p1 - 1] + a[start] + aft2[p2]);
         }
         if (p2) {
-            makemax(res, suff1[p1] + attraction[start] + pref2[p2 - 1]);
-            makemax(res, suff1[p1] + attraction[start] + pref1[p2 - 1]);
+            ans = max(ans, aft1[p1] + a[start] + bef2[p2 - 1]);
+            ans = max(ans, bef1[p1] + a[start] + aft2[p2 - 1]);
         }
     }
 
-    return res;
+    return ans;
 }
