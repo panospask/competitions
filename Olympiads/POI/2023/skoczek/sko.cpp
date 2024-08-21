@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "skolib.h"
 #define mp make_pair
+#define pb push_back
 
 using namespace std;
 
@@ -10,22 +11,23 @@ const int DIRS = 8;
 const int d_i[DIRS] = {-2, -2, -1, 1, 2, 2, 1, -1};
 const int d_j[DIRS] = {-1, 1, 2, 2, 1, -1, -2, -2};
 
-const int INF = 1000;
+const int INF = 1000000;
+const int BORDER = 2;
 
 int N;
 int rem;
 vector<vector<bool>> good;
 vector<vector<int>> dist;
-vector<vector<vector<int>>> cnt;
+
+int MIN_X, MAX_X, MIN_Y, MAX_Y;
 
 bool inside(int i, int j)
 {
-    return min(i, j) >= 0 && max(i, j) < N;
+    return i >= max(MIN_X - BORDER, 0) && i <= min(N - 1, MAX_X + BORDER) && j >= max(0, MIN_Y - BORDER) && j <= min(N - 1, MAX_Y + BORDER);
 }
 
 void calculate_dist(pi source)
 {
-    dist.assign(N, vector<int>(N, INF));
     dist[source.first][source.second] = 0;
 
     queue<pi> q;
@@ -34,8 +36,6 @@ void calculate_dist(pi source)
         int i, j;
         tie(i, j) = q.front();
         q.pop();
-
-        cnt[i][j][dist[i][j]]++;
 
         for (int d = 0; d < DIRS; d++) {
             int n_i = i + d_i[d];
@@ -62,6 +62,75 @@ void process(int x, int y)
             }
         }
     }
+
+    dist.assign(N, vector<int>(N, INF));
+}
+
+void clear_distance(void)
+{
+    for (int i = max(MIN_X - BORDER, 0); i <= min(N - 1, MAX_X + BORDER); i++) {
+        for (int j = max(MIN_Y - BORDER, 0); j <= min(N - 1, MAX_Y + BORDER); j++) {
+            dist[i][j] = INF;
+        }
+    }
+}
+
+bool recursively(vector<pi> candidates, int rem, bool execute)
+{
+    if (candidates.size() == 0) {
+        return true;
+    }
+    if (rem == 0) {
+        if (execute) {
+            odpowiedz(candidates.front().first + 1, candidates.front().second + 1);
+        }
+        return candidates.size() <= 1;
+    }
+
+    int PMNX = MIN_X, PMXX = MAX_X, PMNY = MIN_Y, PMXY = MAX_Y;
+
+    for (auto c : candidates) {
+        MIN_X = min(c.first, MIN_X);
+        MIN_Y = min(c.second, MIN_Y);
+        MAX_X = max(c.first, MAX_X);
+        MAX_Y = max(c.second, MAX_Y);
+    }
+
+    for (int i = max(MIN_X - BORDER, 0); i <= min(N - 1, MAX_X + BORDER); i++) {
+        for (int j = max(MIN_Y - BORDER, 0); j <= min(N - 1, MAX_Y + BORDER); j++) {
+            calculate_dist(mp(i, j));
+
+            bool good = true;
+            vector<vector<pi>> by_distance(MAX_X - MIN_X + MAX_Y - MIN_Y + 2 * BORDER);
+
+            for (auto c : candidates) {
+                by_distance[dist[c.first][c.second]].pb(c);
+            }
+
+            clear_distance();
+
+            for (int d = 0; d < by_distance.size(); d++) {
+                good = good && recursively(by_distance[d], rem - 1, false);
+            }
+
+            if (good) {
+                if (execute) {
+                    int d = pytanie(i + 1, j + 1);
+                    recursively(by_distance[d], rem - 1, true);
+                }
+
+                return true;
+            }
+        }
+    }
+
+    MAX_X = PMXX;
+    MAX_Y = PMXY;
+    MIN_X = PMNX;
+    MIN_X = PMNX;
+
+
+    return false;
 }
 
 int main(void) 
@@ -69,54 +138,27 @@ int main(void)
     N = daj_n();
     rem = N * N;
     good.assign(N, vector<bool>(N, true));
-    cnt.resize(N, vector<vector<int>>(N, vector<int>(N, 0)));
 
+    MIN_X = 0;
+    MAX_X = N - 1;
+    MIN_Y = 0;
+    MAX_Y = N - 1;
+
+    dist.assign(N, vector<int>(N, INF));
     process(0 , 0);
     process(N - 1, 0);
+    process(0, N - 1);
 
-    while (rem > 1) {
-        int x, y;
-        int opt = INF;
-
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                cnt[i][j].assign(N, 0);
-            }
-        }
-
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (good[i][j]) {
-                    calculate_dist(mp(i, j));
-                }
-            }
-        }
-
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                int cur = 0;
-                for (int k = 0; k < N; k++) {
-                    cur = max(cur, cnt[i][j][k]);
-                }
-
-                if (cur < opt) {
-                    opt = cur;
-                    x = i;
-                    y = j;
-                }
-            }
-        }
-
-        process(x, y);
-    }
-
+    vector<pi> candidates;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (good[i][j]) {
-                odpowiedz(i + 1, j + 1);
+                candidates.pb(mp(i, j));
             }
         }
     }
 
-    exit(1);
+    MIN_X = MIN_Y = N - 1;
+    MAX_X = MAX_Y = 0;
+    recursively(candidates, 3, true);
 }
