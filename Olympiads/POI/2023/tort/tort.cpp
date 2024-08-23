@@ -3,102 +3,120 @@
 using namespace std;
 
 typedef long double ld;
+typedef double T; 
 
-const int REPS = 25;
+const int REPS = 20;
+const T EPS = 0.0000001;
 
 struct Point {
-    ld x, y;
+    T x, y;
+    T angle;
 
-    void read(void) {
+    int id = -1;
+
+    void read(int i) {
         int x_i, y_i;
         scanf("%d %d", &x_i, &y_i);
         x = x_i;
         y = y_i;
+        id = i;
+
+        angle = atan2(y, x);
+    }
+
+    Point operator + (Point b) {
+        return {this->x + b.x, this->y + b.y};
+    }
+    Point operator * (T b) {
+        return {this->x * b, this->y * b};
+    }
+    Point operator - (Point b) {
+        return *this + (b * -1);
     }
 };
-
-bool pointsort(Point& a, Point& b)
-{
-    if (a.x == b.x) {
-        return a.y < b.y;
-    }
-
-    return a.x < b.y;
-}
-
-struct Line {
-    // The current line is ax + b
-
-    ld a, b;
-
-    void make(Point p1, Point p2) {
-        ;
-    }
-};
-
-ld cross(Point a, Point b)
-{
-    return a.x * b.y - a.y * b.x;
-}
-
-ld intersect(Line l1, Line l2)
-{
-    return (l2.b - l1.b) / (l1.a - l2.a);
-}
 
 int N, K;
 vector<Point> points;
-Line west, east, north, south;
-ld WALLS[4];
-long long tot;
+vector<T> A, B, C;
+vector<pair<T, T>> ans;
 
-ld getArea(ld y)
+bool anglesort(const Point& a, const Point& b)
 {
-    ld x = sqrt(1 - y*y);
+    return a.angle < b.angle;
+}
 
-    Line l;
-    l.make({0, 0}, {x, y});
-
-    ld x1 = intersect(l, east);
-    ld x2 = intersect(l, south);
-    ld x3 = intersect(l, west);
-    ld x4 = intersect(l, north);
-
-    ld ans = 0;
-    if (x1 <= x2) {
-        ;;
-    }
+// Compute the area of the polygon that lies under the line with given angle
+T area(T angle, int p)
+{
+    return abs(tan(angle) * A[p] + B[p] - tan(M_PI_2 - angle) * C[p]);
 }
 
 int main(void)
 {
     scanf("%d %d", &N, &K);
 
-    if (N != 4) {
-        exit(0);
-    }
-
     points.resize(N);
+    A.resize(N);
+    B.resize(N);
+    C.resize(N);
+    ans.resize(K);
+
     for (int i = 0; i < N; i++) {
-        points[i].read();
+        points[i].read(i);
     }
 
-    sort(points.begin(), points.end(), pointsort);
+    sort(points.begin(), points.end(), anglesort);
 
-    west.make(points[0], points[1]);
-    east.make(points[2], points[3]);
-    north.make(points[1], points[3]);
-    south.make(points[0], points[2]);
+    for (auto p : points) {
+        int mod = p.id % 2 ? 1 : -1;
 
-    tot = (long long)(points[1].y - points[0].y) * (points[2].x - points[0].x);
-    ld piece = (ld)tot / (K + 1);
+        A[0] += p.x * p.x * mod;
+    }
+    for (int i = 0; i < points.size(); i++) {
+        auto p = points[i];
+        int mod = p.id % 2 ? 1 : -1;
 
-    for (int i = 1; i <= K; i++) {
-        ld target = piece * i;
+        if (i) {
+            A[i] = A[i - 1];
+            B[i] = B[i - 1];
+            C[i] = C[i - 1];
+        }
 
-        ld l = 0, r = 1;
-        for (int i = 0; i < REPS; i++) {
-            ;
+        A[i] -= p.x * p.x / 2 * mod;
+        B[i] += p.x * p.y * mod;
+        C[i] += p.y * p.y / 2 * mod;
+    }
+
+    T total_area = area(atan2(points.back().y, points.back().x), N - 1);
+    T cut = total_area / (K + 1);
+    T target = cut;
+
+    for (int p = 1; p < points.size() && target < total_area; p++) {
+        T sta = atan2(points[p - 1].y, points[p - 1].x);
+        T en = atan2(points[p].y, points[p].x);
+        T ol = area(en, p - 1);
+
+        while (target < total_area && ol > target) {
+            T l = sta;
+            T r = en;
+
+            for (int i = 0; i < REPS; i++) {
+                T mid = (l + r) / 2;
+                if (area(mid, p - 1) < target) {
+                    l = mid;
+                }
+                else {
+                    r = mid;
+                }
+            }
+
+            T x = sqrt(1 / (1 + tan(r) * tan(r)));
+            T y = sqrt(1 - x * x);
+            target += cut;
+
+            printf("%.8lf %.8lf\n", (double)x, (double)y);
         }
     }
+
+    return 0;
 }
