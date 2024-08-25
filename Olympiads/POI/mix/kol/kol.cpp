@@ -9,8 +9,8 @@ typedef long long ll;
 typedef pair<int, ll> pi;
 
 const int MAXUP = 18;
-const int CUT = 333;
-const ll INF = 1e15;
+const ll INF = 1e16;
+const int ROOT = 0;
 
 struct Query {
     int u, v, c;
@@ -18,26 +18,35 @@ struct Query {
     int pos;
 };
 
+// Global variables
 int N, R, Q;
-vector<vector<pi>> adj_list;
 vector<int> t;
 vector<Query> queries;
 vector<ll> ans;
-
 vector<vector<int>> cuisines;
-vector<int> id;
-vector<int> heavy;
 
-// Distance of a vertex from the source(0)
+// Variables used for the input tree
+vector<vector<pi>> big_list;
+vector<int> big_dep;
 vector<ll> dist;
-vector<int> dep;
-vector<vector<pi>> ancestor;
+vector<vector<pi>> big_ancestor;
+vector<int> tin, tout;
+int counter = 0 ;
+
+// Variables for each of the compressed trees
+vector<vector<pi>> compressed_ancestor;
+vector<vector<pi>> compressed_list;
+vector<int> compressed_dep;
 vector<ll> closest;
 
 int CURRENT = -1;
 
-void dfs(int node, int par)
+void dfs(int node, int par, vector<vector<pi>>& adj_list, vector<int>& dep, bool isbig)
 {
+    if (isbig) {
+        tin[node] = counter++;
+    }
+
     if (t[node] == CURRENT) {
         closest[node] = 0;
     }
@@ -49,20 +58,24 @@ void dfs(int node, int par)
         if (neigh != par) {
             dep[neigh] = dep[node] + 1;
             dist[neigh] = dist[node] + c;
-            dfs(neigh, node);
+
+            dfs(neigh, node, adj_list, dep, isbig);
 
             closest[node] = min(closest[node], closest[neigh] + c);
         }
     }
 
+    if (isbig) {
+        tout[node] = counter;
+    }
 }
 
-void reroot(int node, int par)
+void reroot(int node, int par, vector<vector<pi>>& adj_list, vector<vector<pi>>& ancestor)
 {
     for (auto [neigh, c] : adj_list[node]) {
         if (neigh != par) {
             closest[neigh] = min(closest[neigh], closest[node] + c);
-            reroot(neigh, node);
+            reroot(neigh, node, adj_list, ancestor);
         }
     }
 
@@ -73,7 +86,7 @@ void reroot(int node, int par)
     }
 }
 
-pi jump(int a, int k)
+pi jump(int a, int k, vector<vector<pi>>& ancestor)
 {
     ll opt = closest[a];
     for (int up = 0; up < MAXUP; up++) {
@@ -86,14 +99,14 @@ pi jump(int a, int k)
     return mp(a, opt);
 }
 
-pi lca(int a, int b)
+pi lca(int a, int b, vector<int>& dep, vector<vector<pi>>& ancestor)
 {
     if (dep[a] < dep[b]) {
         swap(a, b);
     }
 
     ll opt = min(closest[a], closest[b]);
-    tie(a, opt) = jump(a, dep[a] - dep[b]);
+    tie(a, opt) = jump(a, dep[a] - dep[b], ancestor);
     opt = min(opt, closest[b]);
     if (a == b) {
         return mp(a, opt);
@@ -119,13 +132,20 @@ pi lca(int a, int b)
 
 ll path(int a, int b) 
 {
-    return dist[a] + dist[b] - 2 * dist[lca(a, b).first];
+    return dist[a] + dist[b] - 2 * dist[lca(a, b, big_dep, big_ancestor).first];
 }
 
-void precalculate_ancestors(void)
+void precalculate_ancestors(vector<int> nodes, vector<vector<pi>>& ancestor)
 {
-    for (int up = 1; up < MAXUP; up++) {
+    if (nodes.empty()) {
+        nodes.resize(N);
         for (int i = 0; i < N; i++) {
+            nodes[i] = i;
+        }
+    }
+
+    for (int up = 1; up < MAXUP; up++) {
+        for (auto i : nodes) {
             ancestor[up][i].first = ancestor[up - 1][ancestor[up - 1][i].first].first;
             ancestor[up][i].second = min(ancestor[up - 1][i].second, ancestor[up - 1][ancestor[up - 1][i].first].second);
         }
@@ -134,22 +154,33 @@ void precalculate_ancestors(void)
 
 bool querysort(const Query& a, const Query& b)
 {
-    return id[a.c] < id[b.c];
+    return a.c < b.c;
+}
+
+bool eulersort(const int& a, const int& b)
+{
+    return tin[a] < tin[b];
+}
+
+bool eulereq(const int& a, const int& b)
+{
+    return tin[a] == tin[b];
 }
 
 int main(void)
 {
     scanf("%d %d", &N, &R);
 
-    adj_list.resize(N);
+    big_list.resize(N);
+    big_dep.resize(N);
+    tin.resize(N);
+    tout.resize(N);
     t.resize(N);
     dist.resize(N);
-    dep.resize(N);
-    ancestor.resize(MAXUP, vector<pi>(N, {0, INF}));
-    closest.assign(N, INF);
+    big_ancestor.resize(MAXUP, vector<pi>(N, {0, INF}));
+    compressed_ancestor.resize(MAXUP, vector<pi>(N, {0, INF}));
     cuisines.resize(R);
-    id.assign(N, -1);
-    heavy.clear();
+    closest.resize(N);
 
     for (int i = 0; i < N; i++) {
         scanf("%d", &t[i]);
@@ -161,15 +192,8 @@ int main(void)
         scanf("%d %d %d", &u, &v, &c);
         u--; v--;
 
-        adj_list[u].pb(mp(v, c));
-        adj_list[v].pb(mp(u, c));
-    }
-
-    for (int c = 0; c < R; c++) {
-        if (cuisines[c].size() > CUT) {
-            id[c] = heavy.size();
-            heavy.pb(c);
-        }
+        big_list[u].pb(mp(v, c));
+        big_list[v].pb(mp(u, c));
     }
 
     scanf("%d", &Q);
@@ -184,41 +208,67 @@ int main(void)
     }
     sort(queries.begin(), queries.end(), querysort);
 
-    int ptr = 0;
-    CURRENT = -1;
-    dfs(0, 0);
-    reroot(0, 0);
-    precalculate_ancestors();
-    while (ptr < Q && id[queries[ptr].c] == -1) {
-        Query cur = queries[ptr];
 
-        ans[cur.pos] = INF;
-        for (auto node : cuisines[cur.c]) {
-            ans[cur.pos] = min(ans[cur.pos], path(cur.u, node) + path(cur.v, node));
+    // Build the input tree
+    big_dep[ROOT] = dist[ROOT] = 0;
+    dfs(ROOT, ROOT, big_list, big_dep, true);
+    reroot(ROOT, ROOT, big_list, big_ancestor);
+    precalculate_ancestors({}, big_ancestor);
+
+
+    compressed_dep.resize(N);
+    compressed_list.resize(N);
+    int p = 0;
+    for (int c = 0; c < R; c++) {
+        vector<int> special = cuisines[c];
+        special.pb(ROOT);
+        int prv = p;
+        CURRENT = c;
+
+        while (p < Q && queries[p].c == c) {
+            special.pb(queries[p].u);
+            special.pb(queries[p].v);
+            p++;
         }
 
-        ptr++;
-    }
-    while (ptr < Q) {
-        CURRENT = queries[ptr].c;
+        sort(special.begin(), special.end(), eulersort);
+        special.resize(unique(special.begin(), special.end(), eulereq) - special.begin());
 
-        dfs(0, 0);
-        reroot(0, 0);
-        ancestor[0][0] = {0, INF};
-        precalculate_ancestors();
+        int K = special.size();
+        for (int i = 0; i < K - 1; i++) {
+            special.pb(lca(special[i], special[i + 1], big_dep, big_ancestor).first);
+        }
 
-        while (ptr < Q && queries[ptr].c == CURRENT) {
-            Query cur = queries[ptr];
+        sort(special.begin(), special.end(), eulersort);
+        special.resize(unique(special.begin(), special.end(), eulereq) - special.begin());
 
-            pi l = lca(cur.u, cur.v);
-            ans[cur.pos] = dist[cur.u] + dist[cur.v] - 2 * dist[l.first] + 2 * l.second;
+        for (int i = 0; i < special.size() - 1; i++) {
+            int u = special[i + 1];
+            int v = lca(special[i], special[i + 1], big_dep, big_ancestor).first;
 
-            ptr++;
+            ll d = dist[u] - dist[v];
+
+            compressed_list[u].pb(mp(v, d));
+            compressed_list[v].pb(mp(u, d));
+        }
+
+        compressed_dep[ROOT] = 0;
+        dfs(ROOT, ROOT, compressed_list, compressed_dep, false);
+        reroot(ROOT, ROOT, compressed_list, compressed_ancestor);
+        precalculate_ancestors(special, compressed_ancestor);
+
+        for (int q = prv; q < p; q++) {
+            ans[queries[q].pos] = path(queries[q].u, queries[q].v) + 2 * lca(queries[q].u, queries[q].v, compressed_dep, compressed_ancestor).second;
+        }
+
+        for (int i = 0; i < special.size(); i++) {
+            compressed_list[special[i]].clear();
+            compressed_dep[special[i]] = 0;
         }
     }
 
     for (int i = 0; i < Q; i++) {
-        printf("%lld\n", ans[i] < INF ? ans[i] : -1);
+        printf("%lld\n", ans[i] >= INF ? -1 : ans[i]);
     }
 
     return 0;
