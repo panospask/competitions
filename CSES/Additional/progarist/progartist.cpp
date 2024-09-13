@@ -9,27 +9,9 @@ int N, A, B;
 vector<pi> applicants;
 ll ans = 0;
 
-bool cmp1(const pi& a, const pi& b)
+bool diffsort(const pi& a, const pi& b)
 {
-    if (a.first == b.first) {
-        return a.second > b.second;
-    }
-
-    return a.first > b.first;
-}
-
-bool cmp2(const pi& a, const pi& b)
-{
-    if (a.first - a.second == b.first - b.second) {
-        return a.first < b.first;
-    }
-
-    return a.first - a.second > b.first - b.second;
-}
-
-bool cmp3(const pi& a, const pi& b)
-{
-    return a.second > b.second;
+    return a.first - a.second < b.first - b.second;
 }
 
 int main(void)
@@ -42,30 +24,73 @@ int main(void)
         scanf("%d %d", &applicants[i].first, &applicants[i].second);
     }
 
-    sort(applicants.begin(), applicants.end(), cmp1);
-
-    ll cur = 0;
+    sort(applicants.rbegin(), applicants.rend(), diffsort);
 
     priority_queue<int, vector<int>, greater<int>> programmers;
-    priority_queue<int> aspiring_artists;
-    aspiring_artists.push(0);
+    multiset<int> artists;
+    multiset<int> future_artists;        
 
+    ll ans = 0;
+    ll cur = 0;
+
+    int weakart = INT_MAX;
     for (int i = 0; i < A; i++) {
+        programmers.push(applicants[i].first);
         cur += applicants[i].first;
-        programmers.push(applicants[i].first - applicants[i].second);
     }
-    for (int i = A; i < N; i++) {
-        aspiring_artists.push(applicants[i].second);
+    for (int i = A; i < A + B; i++) {
+        artists.insert(applicants[i].second);
+        cur += applicants[i].second;
+        weakart = min(weakart, applicants[i].second);
     }
-    for (int i = 0; i < B; i++) {
-        cur += aspiring_artists.top();
-        aspiring_artists.pop();
+    for (int i = A + B; i < N; i++) {
+
+        int last = applicants[i].second;
+        if (applicants[i].second > weakart) {
+            artists.insert(applicants[i].second);
+            
+            cur -= weakart;
+            cur += applicants[i].second;
+            last = weakart;
+
+            artists.erase(artists.find(weakart));
+            weakart = *artists.begin();
+        }
+
+        future_artists.insert(last);
     }
 
     ans = max(ans, cur);
-    for (int p = A; p < A + B; p++) {
-        if (applicants[p].second > aspiring_artists.top())
+    for (int i = A; i < N - B; i++) {
+        // Move i from artist to programmer
+
+        // Remove artist
+        if (applicants[i].second >= weakart) {
+            cur -= applicants[i].second;
+            artists.erase(artists.find(applicants[i].second));
+
+            weakart = *future_artists.rbegin();
+            future_artists.erase(future_artists.find(weakart));
+            artists.insert(weakart);
+            cur += weakart;
+        }
+        else {
+            future_artists.erase(future_artists.find(applicants[i].second));
+        }
+
+        // Insert programmer
+        if (A > 0 && programmers.top() < applicants[i].first) {
+            cur += applicants[i].first;
+            cur -= programmers.top();
+
+            programmers.pop();
+            programmers.push(applicants[i].first);
+        }
+
+        ans = max(ans, cur);
     }
+
+    printf("%lld\n", ans);
 
     return 0;
 }
