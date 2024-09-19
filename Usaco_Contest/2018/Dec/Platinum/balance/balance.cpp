@@ -1,58 +1,41 @@
 #include <bits/stdc++.h>
 #define pb push_back
-#define mp make_pair
 
 using namespace std;
 
 typedef long long ll;
-typedef ll T;
+
+const ll MUL = 1e5;
 
 struct Point {
-    T x, y;
-
-    Point(void) {}
-    Point(T a, T b) {x = a, y = b;}
+    int x, y;
 
     Point operator + (Point b) {
-        return Point(x + b.x, y + b.y);
+        return {this->x + b.x, this->y + b.y};
     }
-    Point operator * (T b) {
-        return Point(x * b, y * b);
+    Point operator * (int b) {
+        return {x * b, y * b};
     }
     Point operator - (Point b) {
         return *this + b * -1;
     }
 };
 
-T cross(Point a, Point b)
+ll cross(Point a, Point b)
 {
-    return a.x * b.y - a.y * b.x;
+    return (ll)a.x * b.y - (ll)a.y * b.x;
 }
-T orient(Point a, Point b, Point c)
+
+// Returns true if, when traveling from a to b, c is to the right
+bool isright(Point a, Point b, Point c)
 {
-    return cross(b - a, c - a);
+    return cross(b - a, c - b) < 0;
 }
 
 int N;
-deque<Point> hull;
+vector<int> f;
 vector<Point> points;
-vector<double> ans;
-
-void find_hull(void)
-{
-    hull.pb(points[0]);
-    hull.pb(points[1]);
-
-    for (int i = 2; i < points.size(); i++) {
-        while (hull.size() > 1) {
-            if (orient(hull[hull.size() - 2], hull.back(), points[i]) >= 0)
-                hull.pop_back();
-            else
-                break;
-        }
-        hull.pb(points[i]);
-    }
-}
+vector<ll> ans;
 
 int main(void)
 {
@@ -61,36 +44,52 @@ int main(void)
 
     scanf("%d", &N);
 
-    points.pb(Point(0, 0));
+    f.resize(N + 2);
+    points.resize(N + 2);
+    
+    f[0] = 0;
+    points[0] = {0, 0};
     for (int i = 1; i <= N; i++) {
-        int f;
-        scanf("%d", &f);
-        points.pb(Point(i, f));
+        scanf("%d", &f[i]);
+        points[i] = {i, f[i]};
     }
-    points.pb(Point(N + 1, 0));
+    points[N + 1] = {N + 1, 0};
 
-    find_hull();
+    vector<Point> hull;
+    hull.pb(points[0]);
+
+    for (int i = 1; i <= N + 1; i++) {
+        while (hull.size() >= 2) {
+            int sz = hull.size();
+            if (!isright(hull[sz - 2], hull[sz - 1], points[i])) {
+                hull.pop_back();
+            }
+            else {
+                break;
+            }
+        }
+
+        hull.pb(points[i]);
+    }
 
     ans.resize(N + 2);
-
-    ll p_val = 0;
-    int p_num = 0;
+    int p = 0;
+    Point prv;
     for (int i = 0; i <= N + 1; i++) {
-        if (hull.front().x == i) {
-            ans[i] = hull.front().y * (ll)1e5;
-            p_val = hull.front().y;
-            p_num = i;
-
-            hull.pop_front();
+        Point cur = hull[p];
+        if (cur.x == i) {
+            ans[i] = (ll)cur.y * MUL;
+            prv = cur;
+            p++;
         }
         else {
-            ans[i] = ((hull.front().y - p_val) * (i - p_num)  * 1e5 / (double)(hull.front().x - p_num) + p_val * 1e5);
+            ans[i] = (ll)cur.y * (i - prv.x) + (ll)prv.y * (cur.x - i);
+            ans[i] = ans[i] * MUL / (cur.x - prv.x);
         }
     }
 
     for (int i = 1; i <= N; i++) {
-        ll v = ans[i];
-        printf("%lld\n", v);
+        printf("%lld\n", ans[i]);
     }
 
     return 0;
