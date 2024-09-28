@@ -7,6 +7,8 @@ typedef pair<int, int> ii;
 
 const int INF = INT_MAX;
 
+//TEST
+
 struct move {
     int target, steps, last;
 };
