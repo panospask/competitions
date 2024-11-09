@@ -6,41 +6,28 @@ using namespace std;
 int N;
 vector<vector<int>> adj_list;
 
-// losekids[node]: How many of this nodes kids are losing if you move from this node to there?
-vector<int> losekids;
-
-// Does planting the chip in this node result in a winning or losing state?
-vector<bool> state;
-
-bool loses(int node)
-{
-    return losekids[node] == 0;
-}
+// dp[i]: If we try to match all vertices in the subtree of i, how many are left unmatched?
+vector<int> dp;
 
 void dfs(int node, int par)
 {
-    losekids[node] = 0;
+    if (adj_list[node].size() == 1 && par != -1) {
+        dp[node] = 1;
+        return;
+    }
 
+    dp[node] = -1;
     for (auto neigh : adj_list[node]) {
         if (neigh == par) {
             continue;
         }
 
         dfs(neigh, node);
-        losekids[node] += loses(neigh);
+        dp[node] += dp[neigh];
     }
-}
 
-void reroot(int node, int par, bool lose_par)
-{
-    state[node] = losekids[node] + lose_par > 0;
-
-    for (auto neigh : adj_list[node]) {
-        if (neigh == par) {
-            continue;
-        }
-
-        reroot(neigh, node, !(losekids[node] + lose_par - loses(neigh) > 0));
+    if (dp[node] == -1) {
+        dp[node] = 1;
     }
 }
 
@@ -49,8 +36,7 @@ int main(void)
     scanf("%d", &N);
 
     adj_list.resize(N);
-    state.resize(N);    
-    losekids.resize(N);
+    dp.resize(N);
 
     for (int i = 0; i < N - 1; i++) {
         int u, v;
@@ -62,17 +48,13 @@ int main(void)
     }
 
     dfs(0, -1);
-    reroot(0, -1, 0);
 
-    int bad = 0;
-    for (int i = 0; i < N; i++) {
-        bad += !state[i];
-    }
-
-    if (bad) {
-        printf("Alice\n");
-    }
-    else {
+    if (dp[0] == 0) {
         printf("Bob\n");
     }
+    else {
+        printf("Alice\n");
+    }
+
+    return 0;
 }
