@@ -116,7 +116,7 @@ void solve(void)
         pref[i] = pref[i - 1] + (ll)blanks[i - 1] * blanks[i];
 
         // Update good
-        // Why put best here? Because we ignore
+        // Why put best here? Because we ignore the values of the current blanks (they are to be set to v, which does not appear)
         good = max(best, good + (ll)blanks[i] * blanks[i - 1]);
     }
 
