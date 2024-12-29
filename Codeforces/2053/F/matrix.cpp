@@ -8,6 +8,7 @@ int N, M, K;
 
 ll base = 0;
 
+// Good is for calculating the dp of values v that do not appear in the current row in O(1)
 ll good;
 
 vector<vector<int>> grid;
@@ -115,7 +116,7 @@ void solve(void)
         pref[i] = pref[i - 1] + (ll)blanks[i - 1] * blanks[i];
 
         // Update good
-        // Why put best here?
+        // Why put best here? Because we ignore
         good = max(best, good + (ll)blanks[i] * blanks[i - 1]);
     }
 
