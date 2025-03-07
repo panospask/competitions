@@ -100,7 +100,7 @@ void reroot(int node, int par, ll win)
             continue;
         }
 
-        ll cur = win + dp[node] - max(dp[neigh] - 2 * w, 0LL);
+        ll cur = max(0LL, -w + win + dp[node] - max(dp[neigh] - 2 * w, 0LL));
         reroot(neigh, node, cur);
     }
 }

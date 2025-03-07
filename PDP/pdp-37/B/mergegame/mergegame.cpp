@@ -53,14 +53,20 @@ void insert_segment(Segment cur, set<Segment>& s)
 }
 
 // Proccess s (Prerequisite: Process all segments with exponent <= s.e)
-void process_segment(Segment s)
+void process_segment(Segment &s)
 {
     // Merge the numbers of s together in pairs to create the next exponent
     // If there are an odd number of active numbers, erase one
     s.active /= 2;
     s.e++;
 
-    insert_segment(s, segments[s.e]);
+    if (s.active > 0) {
+        insert_segment(s, segments[s.e]);
+    }
+    else {
+        // Merge them with either the segment to the left or to the right
+    }
+
 }
 
 int main(void)
@@ -98,6 +104,7 @@ int main(void)
     int ans = 0;
     while (!segments.empty()) {
         auto v = *segments.begin();
+        segments.erase(segments.begin());
 
         bool found = false;
         for (auto s : v.second) {
@@ -113,7 +120,6 @@ int main(void)
             process_segment(s);
         }
 
-        segments.erase(segments.begin());
     }
 
     printf("%d\n", ans);
