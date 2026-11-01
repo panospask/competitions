@@ -8,89 +8,53 @@ const int MOD = 1e9 + 7;
 
 int N;
 vector<int> A;
-vector<int> B;
-vector<bool> exclude;
 
 void solve(void) {
-    scanf("%d", &N);
+    cin >> N;
 
     A.resize(N);
-    B.resize(N);
-    exclude.assign(2 * N + 10, false);
-    
     for (int i = 0; i < N; i++) {
-        scanf("%d", &A[i]);
+        cin >> A[i];
     }
-    
-    exclude[A[N - 1]] = true;
-    int prv = A[N - 1];
-    int p = 0;
+    A.insert(A.begin(), N);
 
-    ll ways = 1;
-    int used = 0;
-    int ex = 1;
-    for (int i = N - 2; i >= 0; i--) {
-        if (A[i] >= 2 * N + 10) {
+    ll ans = 1;
+    // Banned values
+
+    // The MEX (ie A[N]) is certainly removed
+    for (int i = N; i > 0; i--) {
+        int cur = A[i];
+        int prv = A[i - 1];
+
+        if (cur > prv) {
+            // Impossible
             printf("0\n");
             return;
         }
-        exclude[A[i]] = true;
-        if (A[i] == A[i + 1]) {
-            // B[i + 1] is something smaller
-            while (exclude[p]) {
-                p++;
-            }
-            if (p > A[i]) {
-                printf("0\n");
-                return;
-            }
-
-            ways = ways * (A[i] - used - ex + 1) % MOD;
-
-            B[i + 1] = p;
-            p++;
-            used++;
-        }
-        else if (A[i] > A[i + 1]) {
-            B[i + 1] = 1e9;
-            ways = ways * (N - ex + 1) % MOD;
-            ex++;
-
+        // How many gaps does A[i - 1] have
+        int gaps = N - i + 1;
+        if (cur == prv) {
+            // In i - 1 there was an extra gap, which is now patched by b[i]
+            // We have to patch this gap
+            // Because we're going backwards, just create a gap in [cur - 1, 0]
+            // However (gaps - 1) empty slots are alread created and we account for them
+            ans = ans * (cur - (gaps - 1)) % MOD;
         }
         else {
-            printf("0\n");
-            return;
+            // No gap is patched
+            // Any other value is fair game
+            ans = ans * (N + 1 - gaps) % MOD;
         }
     }
 
-    if (A[0] == N) {
-        while (exclude[p])
-            p++;
-        B[0] = p;
-    }
-    else if (N > A[0]) {
-        B[0] = 1e9;
-    }
-    else {
-        printf("0\n");
-        return;
-    }
-
-    while (exclude[p]) {
-        p++;
-    }
-
-
-    printf("%lld\n", ways);
+    cout << ans << endl;
 }
 
 int main(void) {
     int t;
-    scanf("%d", &t);
+    cin >> t;
 
     while (t--) {
         solve();
     }
-
-    return 0;
 }
