@@ -10,26 +10,32 @@ const ll INF = 1e14;
 
 struct DSU {
     int N;
-    // dp[i][j]: Least total latency in the component of i using j servers
-    vector<vector<ll>> dp;
+    // dp[i][j]: Least total latency in the component of i using j servers (I save the slopes, first slope is the one with biggest decrease)
+    vector<multiset<ll>> dp;
+    // The dp[node][0] of each node (i.e for using 0 servers). It is fake
+    vector<ll> in_vl;
     vector<int> cnt;
     vector<int> rep;
 
     void init(int n, vector<bool>& c) {
         N = n;
         cnt.assign(N, 0);
-        dp.assign(N, vector<ll>());
+        dp.assign(N, multiset<ll>());
         rep.assign(N, 0);
+        in_vl.assign(N, 0);
 
         for (int i = 0; i < N; i++) {
             cnt[i] = c[i];
             rep[i] = i;
             if (cnt[i]) {
-                dp[i].push_back(INF);
-                dp[i].push_back(0);
+                // We gain very much by just using a server
+                dp[i].insert(-INF);
+                in_vl[i] = INF;
             }
             else {
-                dp[i].push_back(0);
+                // We don't gain anything by using a server 
+                dp[i].insert(0);
+                in_vl[i] = 0;
             }
         }
     }
@@ -41,6 +47,17 @@ struct DSU {
         return rep[a];
     }
 
+    // a holds the final result
+    void merge(multiset<ll>& a, multiset<ll>& b) {
+        if (a.size() < b.size()) {
+            swap(a, b);
+        }
+
+        for (auto v : b) {
+            a.insert(v);
+        }
+    }
+
     void unite(int a, int b, int w) {
         a = find(a);
         b = find(b);
@@ -49,27 +66,42 @@ struct DSU {
             return;
         }
 
-        // Merge the dps
-        // Either use all in a, all in b, or a combination
-        vector<ll> res(cnt[a] + cnt[b] + 1, INF);
-        for (int v1 = 0; v1 <= cnt[a]; v1++) {
-            for (int v2 = 0; v2 <= cnt[b]; v2++) {
-                // What if we choose v1 from a and v2 from b
-                res[v1 + v2] = min(res[v1 + v2], dp[a][v1] + dp[b][v2]);
-            }
-        }
-        // Alternatively choose everything from a => Everyone in b gets latency w
-        for (int v1 = 1; v1 <= cnt[a]; v1++) {
-            res[v1] = min(res[v1], dp[a][v1] + (ll)w * cnt[b]);
-        }
-        for (int v2 = 1; v2 <= cnt[b]; v2++) {
-            res[v2] = min(res[v2], dp[b][v2] + (ll)w * cnt[a]);
-        }
+        // Modify the multisets appropriately
+        // Find the first value in both arrays
+        ll a1v = in_vl[a] + *dp[a].begin();
+        ll b1v = in_vl[b] + *dp[b].begin();
+        dp[a].erase(dp[a].begin());
+        dp[b].erase(dp[b].begin());
+        // Change the initial value to suit the merging
+        in_vl[a] = (ll)cnt[a] * w;
+        in_vl[b] = (ll)cnt[b] * w;
+        dp[a].insert(a1v - in_vl[a]);
+        dp[b].insert(b1v - in_vl[b]);
 
         // Mege the nodes
-        dp[a] = res;
+        merge(dp[a], dp[b]);
+        // Set the initial value
+        in_vl[a] = (ll)cnt[a] * w + (ll)cnt[b] * w;
         cnt[a] += cnt[b];
         rep[b] = a;
+    }
+
+    void print(int node) {
+        node = find(node);
+
+        ll cur = in_vl[node];
+        int i = 0;
+        for (auto slope : dp[node]) {
+            i++;
+            cur += slope;
+
+            cout << cur << ' ';
+        }
+        while (i < N) {
+            i++;
+
+            cout << cur << ' ';
+        }
     }
 };
 
@@ -104,14 +136,7 @@ void solve(void) {
         graph.unite(e.second.first, e.second.second, e.first);
     }
 
-    int tot = graph.find(0);
-    for (int k = 1; k <= N; k++) {
-        if (k > P) {
-            cout << 0 << ' ';
-            continue;
-        }
-        cout << graph.dp[tot][k] << ' ';
-    }
+    graph.print(0);
     cout << endl;
 }
 

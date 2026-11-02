@@ -47,11 +47,6 @@ ll choose(ll n, ll k) {
     return nom * den % MOD;
 }
 
-// Distribute a balls in b boxes
-ll distribute(ll a, ll b) {
-    return choose(a + b - 1, a);
-}
-
 void precalculate(void) {
     fact.assign(2 * N + 1, 0);
     inv.assign(2 * N + 1, 0);
@@ -67,6 +62,7 @@ void precalculate(void) {
 }
 
 void dfs(int node, int par) {
+    subtree[node] = 1;
     for (auto neigh : adj_list[node]) {
         if (neigh == par) {
             continue;
@@ -76,9 +72,37 @@ void dfs(int node, int par) {
         subtree[node] += subtree[neigh];
     }
 
-    add(ans, choose(N, K));
+    // The total configurations in which the edge from this node to parent is an edge between
+    // 2 good nodes
+    ll total = choose(subtree[node], K / 2) * choose(N - subtree[node], K / 2) % MOD;
+    add(ans, total);
 }
 
 int main(void) {
-    ;
+    scanf("%d %d", &N, &K);
+
+    precalculate();
+    subtree.resize(N);
+    adj_list.resize(N);
+    for (int i = 0; i < N - 1; i++) {
+        int u, v;
+        scanf("%d %d", &u, &v);
+        u--; v--;
+
+        adj_list[u].push_back(v);
+        adj_list[v].push_back(u);
+    }
+
+    if (K % 2 == 1) {
+        printf("1\n");
+        return 0;
+    }
+
+    dfs(0, -1);
+    ans = ans * calc_inv(choose(N, K)) % MOD;
+
+    // Answer is 1 good node + Expected amount of edges
+    add(ans, 1);
+
+    printf("%lld\n", ans);
 }
